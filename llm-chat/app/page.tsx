@@ -392,10 +392,10 @@ export default function Home() {
                       : "bg-gray-800 text-gray-100 border border-gray-700",
                   )}
                 >
-                  <div className="whitespace-pre-wrap text-base">{message.content}</div>
-                  <div className="flex justify-between items-center mt-2">
-                    <div className="text-sm opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
-                    {message.tokens !== undefined && <div className="text-sm opacity-70">{message.tokens} tokens</div>}
+                  <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                  <div className="flex justify-between items-center mt-2 space-x-6">
+                    <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
+                    {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
                   </div>
                 </div>
               </div>

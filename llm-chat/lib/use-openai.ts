@@ -183,7 +183,8 @@ export function useOpenAI() {
             role: m.role === "user" ? "user" : "model",
             parts: [{ text: m.content }]
           }))
-        
+        console.log("conversationParts", conversationParts)
+        console.log("systemMessage", systemMessage)
         body = {
           contents: conversationParts.length > 0 ? conversationParts : [{ 
             parts: [{ text: "Hello" }] 

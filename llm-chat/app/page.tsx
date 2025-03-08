@@ -31,6 +31,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const [fileName, setFileName] = useState("conversation")
   const [tokenRates, setTokenRates] = useState<TokenRates>({
     inputPrice: 0.0000003, // $0.0003 per 1K tokens (for Gemini)
@@ -78,6 +79,14 @@ export default function Home() {
   // Calculate tokens for current input (for preview)
   const currentInputTokens = input ? countTokens(input) : 0
 
+  // Auto-resize textarea when content changes
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto"
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`
+    }
+  }, [input])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
@@ -107,6 +116,57 @@ export default function Home() {
     }
   }, [])
 
+  // Handle selecting a prompt
+  const handleSelectPrompt = (prompt: Prompt) => {
+    console.log("Selecting prompt:", prompt)
+
+    if (prompt.id === "system") {
+      // Update system prompt
+      setSystemPrompt(prompt.content)
+      setSystemPromptTokens(prompt.tokens)
+
+      // Save to localStorage
+      localStorage.setItem("llm_system_prompt", JSON.stringify(prompt))
+
+      console.log("System prompt updated:", prompt.content)
+    } else {
+      // Set the input to the prompt content
+      setInput(prompt.content)
+      console.log("Input prompt set:", prompt.content)
+
+      // Focus and resize the input
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+          inputRef.current.style.height = "auto"
+          inputRef.current.style.height = `${inputRef.current.scrollHeight}px`
+        }
+      }, 0)
+    }
+  }
+
+  // Handle selecting a template prompt
+  const handleSelectTemplate = (template: Prompt, userInput: string) => {
+    console.log("Selecting template:", template)
+
+    // Replace {query} with user input
+    const processedContent = template.content.replace(/{query}/g, userInput || "[Your input will appear here]")
+
+    // Set the input to the processed template content
+    setInput(processedContent)
+    console.log("Template processed:", processedContent)
+
+    // Focus and resize the input
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+        inputRef.current.style.height = "auto"
+        inputRef.current.style.height = `${inputRef.current.scrollHeight}px`
+      }
+    }, 0)
+  }
+
+  // Add debug logging to the handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
@@ -133,6 +193,7 @@ export default function Home() {
           content: systemPrompt,
         }
 
+        // Create message history with system prompt first
         const messageHistory = [
           systemMessage,
           ...messages
@@ -144,9 +205,15 @@ export default function Home() {
           { role: "user" as const, content: input },
         ]
 
+        console.log("Sending messages to API:", messageHistory)
+        console.log("Current provider:", currentProvider)
+        console.log("Current model:", currentModel)
+
         const response = await sendMessage(messageHistory)
 
         if (response) {
+          console.log("API response:", response)
+
           const assistantMessage: Message = {
             role: "assistant",
             content: response.content,
@@ -206,8 +273,9 @@ export default function Home() {
       setMessages([])
       // Focus back on the input field after clearing
       setTimeout(() => {
-        const textarea = document.querySelector("textarea")
-        if (textarea) textarea.focus()
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
       }, 100)
     }
   }
@@ -247,20 +315,6 @@ export default function Home() {
 
     // Update the model in the OpenAI hook
     setModel(model)
-  }
-
-  const handleSelectPrompt = (prompt: Prompt) => {
-    if (prompt.id === "system") {
-      // Update system prompt
-      setSystemPrompt(prompt.content)
-      setSystemPromptTokens(prompt.tokens)
-
-      // Save to localStorage
-      localStorage.setItem("llm_system_prompt", JSON.stringify(prompt))
-    } else {
-      // Set the input to the prompt content
-      setInput(prompt.content)
-    }
   }
 
   return (
@@ -334,11 +388,17 @@ export default function Home() {
         </header>
       </div>
 
-      {/* Prompt Manager - Now with a max height */}
+      {/* Prompt Manager */}
       <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800">
-        <PromptManager onSelectPrompt={handleSelectPrompt} systemPromptTokens={systemPromptTokens} />
+        <PromptManager
+          onSelectPrompt={handleSelectPrompt}
+          onSelectTemplate={handleSelectTemplate}
+          systemPromptTokens={systemPromptTokens}
+          userInput={input}
+        />
       </div>
 
+      {/* Token Counter and Cost Calculator */}
       {/* Token Counter and Cost Calculator */}
       <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800 p-5">
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
@@ -409,8 +469,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Chat container - Adjusted height to balance with prompt manager */}
-      <div className="w-full max-w-5xl h-[50vh] bg-gray-900 border-x border-gray-800 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
+      {/* Chat container */}
+      <div className="w-full max-w-5xl h-[65vh] bg-gray-900 border-x border-gray-800 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
         <div className="p-5 space-y-5">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -480,6 +540,7 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="flex gap-3">
           <div className="flex-1 flex flex-col">
             <Textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message here..."
@@ -490,12 +551,13 @@ export default function Home() {
                   handleSubmit(e)
                 }
               }}
+              style={{ overflow: "hidden" }}
             />
             {input && <div className="text-xs text-gray-400 mt-1 self-end">{currentInputTokens} tokens</div>}
           </div>
           <Button
             type="submit"
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 px-5"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 px-5 self-start"
             disabled={isLoading || !input.trim()}
           >
             <Send className="h-5 w-5" />

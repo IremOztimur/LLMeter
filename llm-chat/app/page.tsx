@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { countTokens } from "@/lib/tokenizer"
 import ConfigModal from "@/components/config-modal"
 import { useOpenAI } from "@/lib/use-openai"
+import PromptManager, { type Prompt } from "@/components/prompt-manager"
 
 type Message = {
   role: "user" | "assistant" | "system"
@@ -38,19 +39,21 @@ export default function Home() {
   })
   const [showTokenInfo, setShowTokenInfo] = useState(false)
   const [isConfigOpen, setIsConfigOpen] = useState(false)
+  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.")
+  const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("You are a helpful assistant."))
 
   // Get the OpenAI hook values
-  const { 
-    sendMessage, 
-    isConfigured, 
-    currentModel, 
-    setApiKey, 
-    setModel, 
-    apiKey, 
-    baseUrl, 
+  const {
+    sendMessage,
+    isConfigured,
+    currentModel,
+    setApiKey,
+    setModel,
+    apiKey,
+    baseUrl,
     setBaseUrl,
     currentProvider,
-    setProvider
+    setProvider,
   } = useOpenAI()
 
   // Calculate total tokens and costs
@@ -64,7 +67,7 @@ export default function Home() {
       }
       return stats
     },
-    { inputTokens: 0, outputTokens: 0 },
+    { inputTokens: systemPromptTokens, outputTokens: 0 },
   )
 
   const totalTokens = tokenStats.inputTokens + tokenStats.outputTokens
@@ -90,6 +93,20 @@ export default function Home() {
     }
   }, [currentModel])
 
+  // Load system prompt from localStorage on mount
+  useEffect(() => {
+    const savedSystemPrompt = localStorage.getItem("llm_system_prompt")
+    if (savedSystemPrompt) {
+      try {
+        const parsedPrompt = JSON.parse(savedSystemPrompt)
+        setSystemPrompt(parsedPrompt.content)
+        setSystemPromptTokens(parsedPrompt.tokens)
+      } catch (e) {
+        console.error("Failed to parse saved system prompt:", e)
+      }
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
@@ -113,7 +130,7 @@ export default function Home() {
         // Use the actual API
         const systemMessage = {
           role: "system" as const,
-          content: "You are a helpful assistant.",
+          content: systemPrompt,
         }
 
         const messageHistory = [
@@ -232,6 +249,20 @@ export default function Home() {
     setModel(model)
   }
 
+  const handleSelectPrompt = (prompt: Prompt) => {
+    if (prompt.id === "system") {
+      // Update system prompt
+      setSystemPrompt(prompt.content)
+      setSystemPromptTokens(prompt.tokens)
+
+      // Save to localStorage
+      localStorage.setItem("llm_system_prompt", JSON.stringify(prompt))
+    } else {
+      // Set the input to the prompt content
+      setInput(prompt.content)
+    }
+  }
+
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-gray-100 p-4">
       {/* Config Modal */}
@@ -303,6 +334,11 @@ export default function Home() {
         </header>
       </div>
 
+      {/* Prompt Manager - Now with a max height */}
+      <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800">
+        <PromptManager onSelectPrompt={handleSelectPrompt} systemPromptTokens={systemPromptTokens} />
+      </div>
+
       {/* Token Counter and Cost Calculator */}
       <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800 p-5">
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
@@ -346,6 +382,7 @@ export default function Home() {
                 <span className="text-base font-medium">{tokenStats.inputTokens.toLocaleString()} tokens</span>
                 <span className="text-sm text-gray-400">${inputCost.toFixed(6)}</span>
               </div>
+              <div className="text-xs text-gray-500 mt-1">Includes system prompt: {systemPromptTokens} tokens</div>
             </div>
 
             <div className="bg-gray-750 rounded p-3 border border-gray-700">
@@ -372,8 +409,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Chat container */}
-      <div className="w-full max-w-5xl h-[65vh] bg-gray-900 border-x border-gray-800 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
+      {/* Chat container - Adjusted height to balance with prompt manager */}
+      <div className="w-full max-w-5xl h-[50vh] bg-gray-900 border-x border-gray-800 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
         <div className="p-5 space-y-5">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -468,3 +505,4 @@ export default function Home() {
     </main>
   )
 }
+

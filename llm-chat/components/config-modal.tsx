@@ -12,6 +12,8 @@ interface ConfigModalProps {
   setModel: (model: string) => void
   baseUrl: string
   setBaseUrl: (url: string) => void
+  provider: "openai" | "google" | "anthropic" | "custom"
+  setProvider: (provider: "openai" | "google" | "anthropic" | "custom") => void
 }
 
 const ConfigModal = ({
@@ -23,11 +25,13 @@ const ConfigModal = ({
   setModel,
   baseUrl,
   setBaseUrl,
+  provider,
+  setProvider,
 }: ConfigModalProps) => {
   const [localApiKey, setLocalApiKey] = useState(apiKey)
   const [localModel, setLocalModel] = useState(model || "gpt-4o")
   const [localBaseUrl, setLocalBaseUrl] = useState(baseUrl)
-  const [provider, setProvider] = useState<"openai" | "google" | "anthropic" | "custom">("openai")
+  const [localProvider, setLocalProvider] = useState<"openai" | "google" | "anthropic" | "custom">(provider || "openai")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState("")
 
@@ -36,21 +40,10 @@ const ConfigModal = ({
       setLocalApiKey(apiKey)
       setLocalModel(model || "gpt-4o")
       setLocalBaseUrl(baseUrl)
-
-      // Determine provider based on baseUrl
-      if (baseUrl.includes("generativelanguage.googleapis.com")) {
-        setProvider("google")
-      } else if (baseUrl.includes("anthropic.com")) {
-        setProvider("anthropic")
-      } else if (baseUrl === "https://api.openai.com/v1" || baseUrl === "") {
-        setProvider("openai")
-      } else {
-        setProvider("custom")
-      }
-
+      setLocalProvider(provider || "openai")
       setError("")
     }
-  }, [isOpen, apiKey, model, baseUrl])
+  }, [isOpen, apiKey, model, baseUrl, provider])
 
   const handleSave = () => {
     setIsSaving(true)
@@ -64,25 +57,26 @@ const ConfigModal = ({
 
       // Set the base URL based on provider
       let finalBaseUrl = localBaseUrl
-      if (provider === "openai") {
+      if (localProvider === "openai") {
         finalBaseUrl = "https://api.openai.com/v1"
-      } else if (provider === "google") {
+      } else if (localProvider === "google") {
         finalBaseUrl = "https://generativelanguage.googleapis.com/v1beta"
-      } else if (provider === "anthropic") {
+      } else if (localProvider === "anthropic") {
         finalBaseUrl = "https://api.anthropic.com"
       }
 
       // Set the model based on provider if not already set
       let finalModel = localModel
-      if (provider === "openai" && !finalModel) {
+      if (localProvider === "openai" && !finalModel) {
         finalModel = "gpt-4o"
-      } else if (provider === "google" && !finalModel) {
+      } else if (localProvider === "google" && !finalModel) {
         finalModel = "gemini-2.0-flash"
-      } else if (provider === "anthropic" && !finalModel) {
+      } else if (localProvider === "anthropic" && !finalModel) {
         finalModel = "claude-3-haiku"
       }
 
       // Save configuration
+      setProvider(localProvider)
       setApiKey(localApiKey)
       setModel(finalModel)
       setBaseUrl(finalBaseUrl)
@@ -97,7 +91,7 @@ const ConfigModal = ({
   }
 
   const handleProviderChange = (newProvider: "openai" | "google" | "anthropic" | "custom") => {
-    setProvider(newProvider)
+    setLocalProvider(newProvider)
 
     // Set default model based on provider
     if (newProvider === "openai") {
@@ -132,7 +126,9 @@ const ConfigModal = ({
               <button
                 type="button"
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  provider === "openai" ? "bg-orange-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  localProvider === "openai"
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
                 }`}
                 onClick={() => handleProviderChange("openai")}
               >
@@ -141,7 +137,9 @@ const ConfigModal = ({
               <button
                 type="button"
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  provider === "google" ? "bg-orange-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  localProvider === "google"
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
                 }`}
                 onClick={() => handleProviderChange("google")}
               >
@@ -150,7 +148,9 @@ const ConfigModal = ({
               <button
                 type="button"
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  provider === "anthropic" ? "bg-orange-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  localProvider === "anthropic"
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
                 }`}
                 onClick={() => handleProviderChange("anthropic")}
               >
@@ -159,7 +159,9 @@ const ConfigModal = ({
               <button
                 type="button"
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  provider === "custom" ? "bg-orange-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  localProvider === "custom"
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
                 }`}
                 onClick={() => handleProviderChange("custom")}
               >
@@ -191,7 +193,7 @@ const ConfigModal = ({
             <label htmlFor="model" className="block text-sm font-medium text-gray-300">
               Model
             </label>
-            {provider === "openai" && (
+            {localProvider === "openai" && (
               <select
                 id="model"
                 value={localModel}
@@ -204,18 +206,21 @@ const ConfigModal = ({
               </select>
             )}
 
-            {provider === "google" && (
+            {localProvider === "google" && (
               <select
                 id="model"
                 value={localModel}
                 onChange={(e) => setLocalModel(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
+                <option value="gemini-2.0-pro">Gemini 2.0 Pro</option>
                 <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
               </select>
             )}
 
-            {provider === "anthropic" && (
+            {localProvider === "anthropic" && (
               <select
                 id="model"
                 value={localModel}
@@ -228,7 +233,7 @@ const ConfigModal = ({
               </select>
             )}
 
-            {provider === "custom" && (
+            {localProvider === "custom" && (
               <input
                 type="text"
                 id="model"
@@ -241,7 +246,7 @@ const ConfigModal = ({
           </div>
 
           {/* Base URL (only for custom provider) */}
-          {provider === "custom" && (
+          {localProvider === "custom" && (
             <div className="space-y-2">
               <label htmlFor="baseUrl" className="block text-sm font-medium text-gray-300">
                 Base URL

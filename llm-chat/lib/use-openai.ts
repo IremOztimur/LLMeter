@@ -13,61 +13,131 @@ type ApiResponse = {
   tokens?: number
 }
 
+type Provider = "openai" | "google" | "anthropic" | "custom"
+
 export function useOpenAI() {
   const [apiKey, setApiKey] = useState<string>("")
-  const [model, setModel] = useState<string>("gpt-4o")
-  const [baseUrl, setBaseUrl] = useState<string>("https://api.openai.com/v1")
+  const [model, setModel] = useState<string>("gemini-2.0-flash")
+  const [baseUrl, setBaseUrl] = useState<string>("https://generativelanguage.googleapis.com/v1beta")
   const [isConfigured, setIsConfigured] = useState<boolean>(false)
+  const [currentProvider, setProvider] = useState<Provider>("google")
 
-  // Load API key from session storage on mount
+  // Load provider-specific API key from session storage on mount
   useEffect(() => {
-    const storedApiKey = sessionStorage.getItem("llm_api_key")
-    const storedModel = sessionStorage.getItem("llm_model")
-    const storedBaseUrl = sessionStorage.getItem("llm_base_url")
+    const storedProvider = sessionStorage.getItem("llm_provider") || "google"
+    const storedApiKey = sessionStorage.getItem(`llm_api_key_${storedProvider}`)
+    const storedModel = sessionStorage.getItem(`llm_model_${storedProvider}`)
+    const storedBaseUrl = sessionStorage.getItem(`llm_base_url_${storedProvider}`)
 
+    setProvider(storedProvider as Provider)
+    
     if (storedApiKey) {
       setApiKey(storedApiKey)
+    } else {
+      setApiKey("")
     }
 
     if (storedModel) {
       setModel(storedModel)
+    } else {
+      // Set default model based on provider
+      if (storedProvider === "openai") {
+        setModel("gpt-4o")
+      } else if (storedProvider === "google") {
+        setModel("gemini-2.0-flash")
+      } else if (storedProvider === "anthropic") {
+        setModel("claude-3-haiku")
+      }
     }
 
     if (storedBaseUrl) {
       setBaseUrl(storedBaseUrl)
+    } else {
+      // Set default base URL based on provider
+      if (storedProvider === "openai") {
+        setBaseUrl("https://api.openai.com/v1")
+      } else if (storedProvider === "google") {
+        setBaseUrl("https://generativelanguage.googleapis.com/v1beta")
+      } else if (storedProvider === "anthropic") {
+        setBaseUrl("https://api.anthropic.com")
+      }
     }
 
     setIsConfigured(!!storedApiKey)
   }, [])
 
+  // Save provider to session storage when it changes
+  useEffect(() => {
+    sessionStorage.setItem("llm_provider", currentProvider)
+    
+    // Load provider-specific settings when provider changes
+    const storedApiKey = sessionStorage.getItem(`llm_api_key_${currentProvider}`)
+    const storedModel = sessionStorage.getItem(`llm_model_${currentProvider}`)
+    const storedBaseUrl = sessionStorage.getItem(`llm_base_url_${currentProvider}`)
+    
+    if (storedApiKey) {
+      setApiKey(storedApiKey)
+    } else {
+      setApiKey("")
+    }
+    
+    if (storedModel) {
+      setModel(storedModel)
+    } else {
+      // Set default model based on provider
+      if (currentProvider === "openai") {
+        setModel("gpt-4o")
+      } else if (currentProvider === "google") {
+        setModel("gemini-2.0-flash")
+      } else if (currentProvider === "anthropic") {
+        setModel("claude-3-haiku")
+      }
+    }
+    
+    if (storedBaseUrl) {
+      setBaseUrl(storedBaseUrl)
+    } else {
+      // Set default base URL based on provider
+      if (currentProvider === "openai") {
+        setBaseUrl("https://api.openai.com/v1")
+      } else if (currentProvider === "google") {
+        setBaseUrl("https://generativelanguage.googleapis.com/v1beta")
+      } else if (currentProvider === "anthropic") {
+        setBaseUrl("https://api.anthropic.com")
+      }
+    }
+    
+    setIsConfigured(!!storedApiKey)
+  }, [currentProvider])
+
   // Save API key to session storage when it changes
   useEffect(() => {
     if (apiKey) {
-      sessionStorage.setItem("llm_api_key", apiKey)
+      sessionStorage.setItem(`llm_api_key_${currentProvider}`, apiKey)
       setIsConfigured(true)
     } else {
-      sessionStorage.removeItem("llm_api_key")
+      sessionStorage.removeItem(`llm_api_key_${currentProvider}`)
       setIsConfigured(false)
     }
-  }, [apiKey])
+  }, [apiKey, currentProvider])
 
   // Save model to session storage when it changes
   useEffect(() => {
     if (model) {
-      sessionStorage.setItem("llm_model", model)
+      sessionStorage.setItem(`llm_model_${currentProvider}`, model)
     } else {
-      sessionStorage.removeItem("llm_model")
+      sessionStorage.removeItem(`llm_model_${currentProvider}`)
     }
-  }, [model])
+  }, [model, currentProvider])
 
   // Save base URL to session storage when it changes
   useEffect(() => {
     if (baseUrl) {
-      sessionStorage.setItem("llm_base_url", baseUrl)
+      sessionStorage.setItem(`llm_base_url_${currentProvider}`, baseUrl)
     } else {
-      sessionStorage.removeItem("llm_base_url")
+      sessionStorage.removeItem(`llm_base_url_${currentProvider}`)
     }
-  }, [baseUrl])
+  }, [baseUrl, currentProvider])
 
   const sendMessage = async (messages: Message[]): Promise<ApiResponse | null> => {
     if (!apiKey) {
@@ -207,6 +277,8 @@ export function useOpenAI() {
     isConfigured,
     sendMessage,
     currentModel: model,
+    currentProvider,
+    setProvider,
   }
 }
 

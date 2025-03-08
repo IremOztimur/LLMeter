@@ -201,11 +201,11 @@ export default function Home() {
           model: "claude-3-haiku",
         })
         break
-      case "gemini-1.5-pro":
+      case "gemini-2-flash":
         setTokenRates({
           inputPrice: 0.0000003, // $0.0003 per 1K tokens
           outputPrice: 0.0000006, // $0.0006 per 1K tokens
-          model: "gemini-1.5-pro",
+          model: "gemini-2-flash",
         })
         break
       case "gpt-4o":

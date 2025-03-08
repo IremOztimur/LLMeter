@@ -67,7 +67,7 @@ const ConfigModal = ({
       if (provider === "openai") {
         finalBaseUrl = "https://api.openai.com/v1"
       } else if (provider === "google") {
-        finalBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai"
+        finalBaseUrl = "https://generativelanguage.googleapis.com/v1beta"
       } else if (provider === "anthropic") {
         finalBaseUrl = "https://api.anthropic.com"
       }
@@ -77,7 +77,7 @@ const ConfigModal = ({
       if (provider === "openai" && !finalModel) {
         finalModel = "gpt-4o"
       } else if (provider === "google" && !finalModel) {
-        finalModel = "gemini-1.5-pro"
+        finalModel = "gemini-2.0-flash"
       } else if (provider === "anthropic" && !finalModel) {
         finalModel = "claude-3-haiku"
       }
@@ -104,8 +104,8 @@ const ConfigModal = ({
       setLocalModel("gpt-4o")
       setLocalBaseUrl("https://api.openai.com/v1")
     } else if (newProvider === "google") {
-      setLocalModel("gemini-1.5-pro")
-      setLocalBaseUrl("https://generativelanguage.googleapis.com/v1beta/openai")
+      setLocalModel("gemini-2.0-flash")
+      setLocalBaseUrl("https://generativelanguage.googleapis.com/v1beta")
     } else if (newProvider === "anthropic") {
       setLocalModel("claude-3-haiku")
       setLocalBaseUrl("https://api.anthropic.com")
@@ -211,8 +211,7 @@ const ConfigModal = ({
                 onChange={(e) => setLocalModel(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
-                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
               </select>
             )}
 

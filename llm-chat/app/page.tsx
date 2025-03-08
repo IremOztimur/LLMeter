@@ -32,14 +32,26 @@ export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [fileName, setFileName] = useState("conversation")
   const [tokenRates, setTokenRates] = useState<TokenRates>({
-    inputPrice: 0.0000005, // $0.0005 per 1K tokens (e.g., GPT-4 input)
-    outputPrice: 0.0000015, // $0.0015 per 1K tokens (e.g., GPT-4 output)
-    model: "gpt-4o",
+    inputPrice: 0.0000003, // $0.0003 per 1K tokens (for Gemini)
+    outputPrice: 0.0000006, // $0.0006 per 1K tokens (for Gemini)
+    model: "gemini-2.0-flash",
   })
   const [showTokenInfo, setShowTokenInfo] = useState(false)
   const [isConfigOpen, setIsConfigOpen] = useState(false)
 
-  const { sendMessage, isConfigured, currentModel, setApiKey, setModel, apiKey, baseUrl, setBaseUrl } = useOpenAI()
+  // Get the OpenAI hook values
+  const { 
+    sendMessage, 
+    isConfigured, 
+    currentModel, 
+    setApiKey, 
+    setModel, 
+    apiKey, 
+    baseUrl, 
+    setBaseUrl,
+    currentProvider,
+    setProvider
+  } = useOpenAI()
 
   // Calculate total tokens and costs
   const tokenStats = messages.reduce(
@@ -104,7 +116,6 @@ export default function Home() {
           content: "You are a helpful assistant.",
         }
 
-        // Get all previous messages plus the new one
         const messageHistory = [
           systemMessage,
           ...messages
@@ -201,11 +212,11 @@ export default function Home() {
           model: "claude-3-haiku",
         })
         break
-      case "gemini-2-flash":
+      case "gemini-2.0-flash":
         setTokenRates({
           inputPrice: 0.0000003, // $0.0003 per 1K tokens
           outputPrice: 0.0000006, // $0.0006 per 1K tokens
-          model: "gemini-2-flash",
+          model: "gemini-2.0-flash",
         })
         break
       case "gpt-4o":
@@ -233,6 +244,8 @@ export default function Home() {
         setModel={handleModelChange}
         baseUrl={baseUrl}
         setBaseUrl={setBaseUrl}
+        provider={currentProvider}
+        setProvider={setProvider}
       />
 
       {/* Header */}
@@ -455,4 +468,3 @@ export default function Home() {
     </main>
   )
 }
-

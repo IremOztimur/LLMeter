@@ -14,6 +14,7 @@ import { useOpenAI } from "@/lib/use-openai"
 import PromptManager, { type Prompt } from "@/components/prompt-manager"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 type Message = {
   role: "user" | "assistant" | "system"
@@ -30,7 +31,7 @@ type TokenRates = {
 
 // Add this loading dots animation component
 const LoadingDots = () => (
-  <div className="flex space-x-2 p-4 bg-gray-800/50 rounded-lg w-24">
+  <div className="flex space-x-2 p-4 bg-gray-800/50 dark:bg-gray-800/50 rounded-lg w-24">
     <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
     <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
     <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
@@ -54,7 +55,6 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.")
   const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("You are a helpful assistant."))
   const [activeTemplate, setActiveTemplate] = useState<Prompt | null>(null)
-  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   // Get the OpenAI hook values
   const {
@@ -101,15 +101,9 @@ export default function Home() {
   }, [input])
 
   const scrollToBottom = () => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({
-        top: chatContainerRef.current.scrollHeight,
-        behavior: "smooth"
-      })
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  // Update scroll when messages change
   useEffect(() => {
     scrollToBottom()
   }, [messages])
@@ -394,7 +388,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-950 text-gray-100 p-4">
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 p-4 transition-colors duration-300">
       {/* Config Modal */}
       <ConfigModal
         isOpen={isConfigOpen}
@@ -410,20 +404,22 @@ export default function Home() {
       />
 
       {/* Header */}
-      <div className="w-full max-w-7xl bg-gray-900 rounded-t-xl border border-gray-800 border-b-0">
+      <div className="w-full max-w-7xl bg-white dark:bg-gray-900 rounded-t-xl border border-gray-200 dark:border-gray-800 border-b-0 shadow-sm">
         <header className="p-5">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
               LLM Testing Framework
             </h1>
             <div className="flex items-center gap-4">
+              <ThemeToggle />
+
               <button
                 onClick={() => setIsConfigOpen(true)}
                 className={cn(
                   "flex items-center justify-center gap-2 px-4 py-2.5 rounded-md transition-all duration-200 h-10 border",
                   isConfigured
                     ? "bg-green-600/20 text-green-400 border-green-700 hover:bg-green-600/30"
-                    : "bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700",
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700",
                 )}
                 aria-label="Configure API"
               >
@@ -436,7 +432,7 @@ export default function Home() {
                   type="text"
                   value={fileName}
                   onChange={(e) => setFileName(e.target.value)}
-                  className="bg-gray-800 border border-gray-700 rounded-l-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-100 w-40 h-10"
+                  className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-l-md px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 dark:text-gray-100 w-40 h-10"
                   placeholder="conversation"
                 />
                 <button
@@ -453,10 +449,10 @@ export default function Home() {
 
               <button
                 onClick={clearConversation}
-                className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-100 px-4 py-2.5 rounded-md transition-all duration-200 h-10 border border-gray-700 hover:border-gray-600"
+                className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2.5 rounded-md transition-all duration-200 h-10 border border-gray-300 dark:border-gray-700"
                 aria-label="Clear chat"
               >
-                <Trash2 className="h-4 w-4 text-gray-300" />
+                <Trash2 className="h-4 w-4 text-gray-500 dark:text-gray-300" />
                 <span className="text-sm font-medium">Clear Chat</span>
               </button>
             </div>
@@ -465,9 +461,9 @@ export default function Home() {
       </div>
 
       {/* Main Content - Side by Side Layout */}
-      <div className="w-full max-w-7xl flex flex-col md:flex-row border-x border-gray-800 bg-gray-900">
+      <div className="w-full max-w-7xl flex flex-col md:flex-row border-x border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
         {/* Left Side - Prompt Manager (1/3) */}
-        <div className="w-full md:w-1/3 border-r border-gray-800">
+        <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-800">
           <PromptManager
             onSelectPrompt={handleSelectPrompt}
             onSelectTemplate={handleSelectTemplate}
@@ -477,22 +473,22 @@ export default function Home() {
 
           {/* Template Status Indicator */}
           {activeTemplate && (
-            <div className="p-4 border-t border-gray-800">
-              <div className="bg-orange-500/20 rounded-lg border border-orange-500/30 p-3">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+              <div className="bg-orange-500/10 rounded-lg border border-orange-500/30 p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                    <h3 className="text-sm font-medium text-orange-400">Active Template</h3>
+                    <h3 className="text-sm font-medium text-orange-500">Active Template</h3>
                   </div>
                   <button
                     onClick={() => setActiveTemplate(null)}
-                    className="text-xs text-orange-400 hover:text-orange-300"
+                    className="text-xs text-orange-500 hover:text-orange-400"
                   >
                     Clear
                   </button>
                 </div>
-                <p className="text-xs text-gray-300 mt-2">{activeTemplate.name}</p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-700 dark:text-gray-300 mt-2">{activeTemplate.name}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   Type your input and it will be processed with this template.
                 </p>
               </div>
@@ -503,14 +499,14 @@ export default function Home() {
         {/* Right Side - Chat Area (2/3) */}
         <div className="w-full md:w-2/3 flex flex-col">
           {/* Token Usage Header */}
-          <div className="p-3 border-b border-gray-800 bg-gray-800">
+          <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-orange-400" />
+                <BarChart3 className="h-5 w-5 text-orange-500" />
                 <h3 className="text-sm font-medium">Token Usage</h3>
                 <button
                   onClick={() => setShowTokenInfo(!showTokenInfo)}
-                  className="text-gray-400 hover:text-gray-300 transition-colors"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   aria-label="Token information"
                 >
                   <Info className="h-4 w-4" />
@@ -518,106 +514,140 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 text-xs text-gray-400">
+                <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                   <span>
-                    Input: <span className="text-gray-200">{tokenStats.inputTokens.toLocaleString()}</span>
+                    Input:{" "}
+                    <span className="text-gray-800 dark:text-gray-200">{tokenStats.inputTokens.toLocaleString()}</span>
                   </span>
                   <span className="mx-1">|</span>
                   <span>
-                    Output: <span className="text-gray-200">{tokenStats.outputTokens.toLocaleString()}</span>
+                    Output:{" "}
+                    <span className="text-gray-800 dark:text-gray-200">{tokenStats.outputTokens.toLocaleString()}</span>
                   </span>
                   <span className="mx-1">|</span>
                   <span>
-                    Total: <span className="text-orange-400 font-medium">{totalTokens.toLocaleString()}</span>
+                    Total: <span className="text-orange-500 font-medium">{totalTokens.toLocaleString()}</span>
                   </span>
                 </div>
-                <div className="text-xs text-gray-400">
-                  Cost: <span className="text-orange-400 font-medium">${totalCost.toFixed(6)}</span>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Cost: <span className="text-orange-500 font-medium">${totalCost.toFixed(6)}</span>
                 </div>
               </div>
             </div>
 
             {showTokenInfo && (
-              <div className="mt-2 p-2 bg-gray-750 rounded-md text-xs text-gray-300 border border-gray-700">
+              <div className="mt-2 p-2 bg-gray-200 dark:bg-gray-750 rounded-md text-xs text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700">
                 <p className="mb-1">
                   <strong>OpenAI Tokenization:</strong> 1 token ≈ 4 chars or ¾ of a word | Model:{" "}
-                  <span className="text-gray-200">{currentModel}</span> | System prompt:{" "}
-                  <span className="text-gray-200">{systemPromptTokens}</span> tokens
+                  <span className="text-gray-900 dark:text-gray-200">{currentModel}</span> | System prompt:{" "}
+                  <span className="text-gray-900 dark:text-gray-200">{systemPromptTokens}</span> tokens
                 </p>
               </div>
             )}
           </div>
 
           {/* Chat container */}
-          <div 
-            ref={chatContainerRef}
-            className="w-full max-w-6xl bg-gray-900 border-x border-gray-800 overflow-y-auto flex-1 max-h-[60vh]"
-          >
-            <div className="space-y-6 p-6">
-              {messages.map((message, index) => (
-                <div
-                  key={message.timestamp}
-                  className={cn(
-                    "flex flex-col space-y-2 p-6 rounded-lg",
-                    message.role === "user" 
-                      ? "bg-gray-800 ml-auto max-w-[85%]" 
-                      : "bg-gray-800/50 mr-auto max-w-[85%]"
-                  )}
-                >
-                  <div className="prose prose-invert max-w-none">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
-                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
-                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
-                        h4: ({ node, ...props }) => <h4 className="text-base font-bold mb-2" {...props} />,
-                        p: ({ node, ...props }) => <p className="mb-4 leading-relaxed" {...props} />,
-                        ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
-                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                        strong: ({ node, ...props }) => <strong className="font-bold text-orange-400" {...props} />,
-                        em: ({ node, ...props }) => <em className="italic text-gray-300" {...props} />,
-                        blockquote: ({ node, ...props }) => (
-                          <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
-                        ),
-                        code: ({ node, inline, ...props }) =>
-                          inline ? (
-                            <code className="bg-gray-700 rounded px-1 py-0.5 text-sm" {...props} />
-                          ) : (
-                            <code
-                              className="block bg-gray-700 rounded p-4 my-4 text-sm overflow-x-auto"
-                              {...props}
-                            />
-                          ),
-                        a: ({ node, ...props }) => (
-                          <a className="text-orange-400 hover:text-orange-300 underline" {...props} />
-                        ),
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 space-x-6">
-                    <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
-                    {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 min-h-[60vh] max-h-[70vh] bg-gray-50 dark:bg-gray-900">
+            <div className="p-5 space-y-5">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                  <div className="text-center space-y-3">
+                    <div className="inline-block p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-3">
+                      <Send className="h-7 w-7 text-orange-500" />
+                    </div>
+                    <p className="text-xl">Start a conversation to test your LLM model</p>
+                    <p className="text-base">
+                      {isConfigured ? `Using ${currentModel} API` : "Configure API key to use real LLM models"}
+                    </p>
+                    {activeTemplate && (
+                      <p className="text-sm mt-2 text-orange-500">
+                        Template "{activeTemplate.name}" is active. Your input will be processed with this template.
+                      </p>
+                    )}
                   </div>
                 </div>
-              ))}
-              {isLoading && <LoadingDots />}
+              ) : (
+                messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start",
+                      "transition-opacity duration-300 ease-in-out",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[90%] rounded-2xl px-5 py-4 shadow-md animate-fadeIn",
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700",
+                      )}
+                    >
+                      <div className="prose dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                            h4: ({ node, ...props }) => <h4 className="text-base font-bold mb-2" {...props} />,
+                            p: ({ node, ...props }) => <p className="mb-4 leading-relaxed" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
+                            li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                            strong: ({ node, ...props }) => <strong className="font-bold text-orange-500" {...props} />,
+                            em: ({ node, ...props }) => (
+                              <em className="italic text-gray-700 dark:text-gray-300" {...props} />
+                            ),
+                            blockquote: ({ node, ...props }) => (
+                              <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
+                            ),
+                            code: ({ node, inline, ...props }) =>
+                              inline ? (
+                                <code className="bg-gray-200 dark:bg-gray-700 rounded px-1 py-0.5 text-sm" {...props} />
+                              ) : (
+                                <code
+                                  className="block bg-gray-200 dark:bg-gray-700 rounded p-4 my-4 text-sm overflow-x-auto"
+                                  {...props}
+                                />
+                              ),
+                            a: ({ node, ...props }) => (
+                              <a className="text-orange-500 hover:text-orange-400 underline" {...props} />
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                      <div className="flex justify-between items-center mt-2 space-x-6">
+                        <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
+                        {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-4 max-w-[80%] shadow-md">
+                    <LoadingDots />
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
 
           {/* Input area */}
-          <div className="p-4 border-t border-gray-800">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             {activeTemplate && (
-              <div className="mb-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-md">
+              <div className="mb-2 px-3 py-2 bg-orange-500/10 border border-orange-500/30 rounded-md">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-orange-400">Template: {activeTemplate.name}</span>
+                  <span className="text-sm text-orange-500">Template: {activeTemplate.name}</span>
                   <button
                     onClick={() => setActiveTemplate(null)}
-                    className="text-xs text-orange-400 hover:text-orange-300"
+                    className="text-xs text-orange-500 hover:text-orange-400"
                   >
                     Clear Template
                   </button>
@@ -633,7 +663,7 @@ export default function Home() {
                   placeholder={
                     activeTemplate ? "Type your input to use with the template..." : "Type your message here..."
                   }
-                  className="min-h-[70px] bg-gray-800 border-gray-700 focus-visible:ring-orange-500 resize-none text-base"
+                  className="min-h-[70px] bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 focus-visible:ring-orange-500 resize-none text-base text-gray-900 dark:text-gray-100"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
@@ -643,15 +673,17 @@ export default function Home() {
                   style={{ overflow: "hidden" }}
                 />
                 <div className="flex justify-between mt-1">
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     {activeTemplate && <span>Template mode: Your input will be processed with the template</span>}
                   </div>
-                  {input && <div className="text-xs text-gray-400 self-end">{currentInputTokens} tokens</div>}
+                  {input && (
+                    <div className="text-xs text-gray-600 dark:text-gray-400 self-end">{currentInputTokens} tokens</div>
+                  )}
                 </div>
               </div>
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 px-5 self-start"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 px-5 self-start text-white"
                 disabled={isLoading || !input.trim()}
               >
                 <Send className="h-5 w-5" />

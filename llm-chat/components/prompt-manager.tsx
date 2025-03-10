@@ -188,7 +188,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-gray-800 bg-gray-800 flex justify-between items-center">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 flex justify-between items-center">
         <h3 className="text-base font-medium flex items-center gap-2">
           <span className="bg-orange-500 h-4 w-4 rounded-full flex items-center justify-center">
             <span className="text-xs font-bold text-white">{isExpanded ? "-" : "+"}</span>
@@ -197,31 +197,31 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
         </h3>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-400 hover:text-gray-200 transition-colors"
+          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
         >
           {isExpanded ? "Collapse" : "Expand"}
         </button>
       </div>
 
       {isExpanded && (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
           {/* System Prompt Section */}
-          <div className="p-4 border-b border-gray-700 bg-gray-750">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium text-gray-300">System Prompt</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">System Prompt</h4>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">{systemPrompt.tokens} tokens</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{systemPrompt.tokens} tokens</span>
                 {!isEditingSystem ? (
                   <div className="flex gap-1">
                     <button
                       onClick={() => setIsEditingSystem(true)}
-                      className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                      className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleCopyPrompt(systemPrompt.content)}
-                      className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                      className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </button>
@@ -230,13 +230,13 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                   <div className="flex gap-1">
                     <button
                       onClick={handleUpdateSystemPrompt}
-                      className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                      className="p-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
                     >
                       <Save className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => setIsEditingSystem(false)}
-                      className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                      className="p-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -255,11 +255,11 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                     tokens: countTokens(e.target.value),
                   })
                 }
-                className="w-full min-h-[80px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                className="w-full min-h-[80px] px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                 placeholder="Enter system prompt..."
               />
             ) : (
-              <div className="bg-gray-800 rounded p-2 text-sm text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+              <div className="bg-white dark:bg-gray-800 rounded p-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
                 {systemPrompt.content}
               </div>
             )}
@@ -267,7 +267,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
             {!isEditingSystem && (
               <button
                 onClick={(e) => handleSelectPrompt(systemPrompt, e)}
-                className="mt-2 px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30 transition-colors"
+                className="mt-2 px-2 py-1 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded text-xs hover:bg-orange-500/30 transition-colors"
               >
                 Apply System Prompt
               </button>
@@ -276,19 +276,21 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
 
           {/* User Prompts List */}
           <div className="flex-1 overflow-y-auto">
-            <div className="p-3 border-b border-gray-700 bg-gray-800">
+            <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800">
               <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium text-gray-300">Saved Prompts</h4>
-                <span className="text-xs text-gray-400">{prompts.length} prompts</span>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Saved Prompts</h4>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{prompts.length} prompts</span>
               </div>
             </div>
 
             {prompts.length === 0 && !isCreating ? (
-              <div className="p-4 text-center text-gray-400 text-sm">No saved prompts. Create one to get started.</div>
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                No saved prompts. Create one to get started.
+              </div>
             ) : (
-              <ul className="divide-y divide-gray-700">
+              <ul className="divide-y divide-gray-200 dark:divide-gray-800">
                 {prompts.map((prompt) => (
-                  <li key={prompt.id} className="p-3 hover:bg-gray-750 transition-colors">
+                  <li key={prompt.id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     {editingPrompt?.id === prompt.id ? (
                       <div className="space-y-2">
                         <div className="flex justify-between">
@@ -301,7 +303,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                                 name: e.target.value,
                               })
                             }
-                            className="w-full px-3 py-1.5 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            className="w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                             placeholder="Prompt name"
                           />
                           <div className="flex items-center ml-2">
@@ -320,7 +322,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                               <div
                                 className={cn(
                                   "w-9 h-5 rounded-full transition-colors flex items-center px-1",
-                                  editingPrompt.isTemplate ? "bg-orange-500" : "bg-gray-600",
+                                  editingPrompt.isTemplate ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600",
                                 )}
                               >
                                 <div
@@ -330,7 +332,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                                   )}
                                 ></div>
                               </div>
-                              <span className="ml-2 text-xs text-gray-300">Template</span>
+                              <span className="ml-2 text-xs text-gray-700 dark:text-gray-300">Template</span>
                             </label>
                           </div>
                         </div>
@@ -344,21 +346,23 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                               tokens: countTokens(e.target.value),
                             })
                           }
-                          className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                          className="w-full min-h-[100px] px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                           placeholder="Enter prompt content..."
                         />
                         <div className="flex justify-between">
-                          <span className="text-xs text-gray-400">{editingPrompt.tokens} tokens</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {editingPrompt.tokens} tokens
+                          </span>
                           <div className="flex gap-2">
                             <button
                               onClick={handleUpdatePrompt}
-                              className="px-2 py-1 bg-green-600/30 text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
+                              className="px-2 py-1 bg-green-600/30 text-green-600 dark:text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
                             >
                               Save
                             </button>
                             <button
                               onClick={() => setEditingPrompt(null)}
-                              className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
+                              className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                             >
                               Cancel
                             </button>
@@ -369,31 +373,31 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                       <div>
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
-                            <h4 className="text-sm font-medium text-gray-200">{prompt.name}</h4>
+                            <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{prompt.name}</h4>
                             {prompt.isTemplate && (
-                              <span className="ml-2 px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">
+                              <span className="ml-2 px-1.5 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded text-xs">
                                 Template
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">{prompt.tokens} tokens</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{prompt.tokens} tokens</span>
                             <div className="flex gap-1">
                               <button
                                 onClick={() => setEditingPrompt(prompt)}
-                                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                                className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeletePrompt(prompt.id)}
-                                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                                className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => handleCopyPrompt(prompt.content)}
-                                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                                className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                               >
                                 <Copy className="h-3.5 w-3.5" />
                               </button>
@@ -403,19 +407,21 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
 
                         {prompt.isTemplate ? (
                           <div className="mt-2 space-y-2">
-                            <div className="bg-gray-750 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
                               {prompt.content}
                             </div>
-                            <div className="bg-gray-900/50 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap">
+                            <div className="bg-gray-100/50 dark:bg-gray-900/50 rounded p-2 text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 whitespace-pre-wrap">
                               <div className="flex items-center mb-1">
-                                <Code className="h-3 w-3 mr-1 text-orange-400" />
-                                <span className="text-orange-400 font-medium">Preview with current input:</span>
+                                <Code className="h-3 w-3 mr-1 text-orange-500" />
+                                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                  Preview with current input:
+                                </span>
                               </div>
                               {previewTemplate(prompt.content, userInput)}
                             </div>
                           </div>
                         ) : (
-                          <div className="mt-1 bg-gray-750 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+                          <div className="mt-1 bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
                             {prompt.content}
                           </div>
                         )}
@@ -423,7 +429,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                         <div className="mt-2 flex gap-2">
                           <button
                             onClick={(e) => handleSelectPrompt(prompt, e)}
-                            className="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30 transition-colors"
+                            className="px-2 py-1 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded text-xs hover:bg-orange-500/30 transition-colors"
                           >
                             {prompt.isTemplate ? "Use Template" : "Use Prompt"}
                           </button>
@@ -437,14 +443,14 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
 
             {/* Create New Prompt Form */}
             {isCreating && (
-              <div className="p-4 border-t border-gray-700 space-y-3">
-                <h4 className="text-sm font-medium text-gray-300">Create New Prompt</h4>
+              <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Create New Prompt</h4>
                 <div className="flex justify-between">
                   <input
                     type="text"
                     value={newPromptName}
                     onChange={(e) => setNewPromptName(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="Prompt name"
                   />
                   <div className="flex items-center ml-2">
@@ -458,7 +464,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                       <div
                         className={cn(
                           "w-9 h-5 rounded-full transition-colors flex items-center px-1",
-                          isTemplate ? "bg-orange-500" : "bg-gray-600",
+                          isTemplate ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600",
                         )}
                       >
                         <div
@@ -468,16 +474,16 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                           )}
                         ></div>
                       </div>
-                      <span className="ml-2 text-xs text-gray-300">Template</span>
+                      <span className="ml-2 text-xs text-gray-700 dark:text-gray-300">Template</span>
                     </label>
                   </div>
                 </div>
 
                 {isTemplate && (
-                  <div className="bg-gray-750 rounded p-2 text-xs text-gray-400 border border-gray-700">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded p-2 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
                     <p>
-                      Use <code className="bg-gray-700 px-1 rounded">{"{query}"}</code> in your template to insert the
-                      user's input.
+                      Use <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">{"{query}"}</code> in your
+                      template to insert the user's input.
                     </p>
                   </div>
                 )}
@@ -486,28 +492,32 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                   ref={textareaRef}
                   value={newPromptContent}
                   onChange={(e) => setNewPromptContent(e.target.value)}
-                  className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  className="w-full min-h-[100px] px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                   placeholder={
                     isTemplate ? "Enter prompt template with {query} placeholder..." : "Enter prompt content..."
                   }
                 />
 
                 {isTemplate && userInput && (
-                  <div className="bg-gray-900/50 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap">
+                  <div className="bg-gray-100/50 dark:bg-gray-900/50 rounded p-2 text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 whitespace-pre-wrap">
                     <div className="flex items-center mb-1">
-                      <Code className="h-3 w-3 mr-1 text-orange-400" />
-                      <span className="text-orange-400 font-medium">Preview with current input:</span>
+                      <Code className="h-3 w-3 mr-1 text-orange-500" />
+                      <span className="text-orange-600 dark:text-orange-400 font-medium">
+                        Preview with current input:
+                      </span>
                     </div>
                     {previewTemplate(newPromptContent, userInput)}
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <span className="text-xs text-gray-400">{countTokens(newPromptContent)} tokens</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {countTokens(newPromptContent)} tokens
+                  </span>
                   <div className="flex gap-2">
                     <button
                       onClick={handleCreatePrompt}
-                      className="px-2 py-1 bg-green-600/30 text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
+                      className="px-2 py-1 bg-green-600/30 text-green-600 dark:text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
                     >
                       Save
                     </button>
@@ -518,7 +528,7 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
                         setNewPromptName("")
                         setNewPromptContent("")
                       }}
-                      className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
+                      className="px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     >
                       Cancel
                     </button>
@@ -531,10 +541,10 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
       )}
 
       {/* Create Prompt Button */}
-      <div className="p-3 border-t border-gray-700 mt-auto">
+      <div className="p-3 border-t border-gray-200 dark:border-gray-800 mt-auto bg-white dark:bg-gray-900">
         <Button
           onClick={() => setIsCreating(true)}
-          className="w-full bg-gray-750 hover:bg-gray-700 text-gray-300 border border-gray-600"
+          className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600"
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />

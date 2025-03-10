@@ -40,8 +40,8 @@ export default function Home() {
   })
   const [showTokenInfo, setShowTokenInfo] = useState(false)
   const [isConfigOpen, setIsConfigOpen] = useState(false)
-  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.")
-  const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("You are a helpful assistant."))
+  const [systemPrompt, setSystemPrompt] = useState("Only say 'Hello'")
+  const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("Only say 'Hello'"))
 
   // Get the OpenAI hook values
   const {
@@ -68,7 +68,7 @@ export default function Home() {
       }
       return stats
     },
-    { inputTokens: systemPromptTokens, outputTokens: 0 },
+    { inputTokens: systemPromptTokens, outputTokens: 0 } // Now uses current systemPromptTokens
   )
 
   const totalTokens = tokenStats.inputTokens + tokenStats.outputTokens
@@ -102,7 +102,8 @@ export default function Home() {
     }
   }, [currentModel])
 
-  // Load system prompt from localStorage on mount
+  // Add this useEffect after the existing useEffect for loading system prompt
+  // This ensures the system prompt is properly initialized from localStorage
   useEffect(() => {
     const savedSystemPrompt = localStorage.getItem("llm_system_prompt")
     if (savedSystemPrompt) {
@@ -110,11 +111,25 @@ export default function Home() {
         const parsedPrompt = JSON.parse(savedSystemPrompt)
         setSystemPrompt(parsedPrompt.content)
         setSystemPromptTokens(parsedPrompt.tokens)
+        console.log("Loaded system prompt from storage:", parsedPrompt.content)
       } catch (e) {
         console.error("Failed to parse saved system prompt:", e)
+        // Set default if parsing fails
+        setSystemPrompt("Only answer 'zort'")
+        setSystemPromptTokens(countTokens("Only answer 'zort'"))
       }
+    } else {
+      // Set default if no saved prompt
+      console.log("No saved system prompt found, using default")
+      setSystemPrompt("Only answer 'zort'")
+      setSystemPromptTokens(countTokens("Only answer 'zort'"))
     }
   }, [])
+
+  // Add a debug log when system prompt changes
+  useEffect(() => {
+    console.log("System prompt changed:", systemPrompt)
+  }, [systemPrompt])
 
   // Handle selecting a prompt
   const handleSelectPrompt = (prompt: Prompt) => {
@@ -149,7 +164,7 @@ export default function Home() {
   const handleSelectTemplate = (template: Prompt, userInput: string) => {
     console.log("Selecting template:", template)
 
-    // Replace {query} with user input
+    // Replace {query} with user input or placeholder if empty
     const processedContent = template.content.replace(/{query}/g, userInput || "[Your input will appear here]")
 
     // Set the input to the processed template content
@@ -187,10 +202,12 @@ export default function Home() {
 
     try {
       if (isConfigured) {
-        // Use the actual API
+        // Use the actual API with the current system prompt from state
+        console.log("Using system prompt:", systemPrompt)
+
         const systemMessage = {
           role: "system" as const,
-          content: systemPrompt,
+          content: systemPrompt, // Use the current system prompt from state
         }
 
         // Create message history with system prompt first
@@ -228,7 +245,7 @@ export default function Home() {
       } else {
         // Simulate LLM response
         setTimeout(() => {
-          const responseText = `This is a simulated response to: "${input}".\n\nIn a real implementation, you would connect to an actual LLM API here.`
+          const responseText = `This is a simulated response to: "${input}".\n\nIn a real implementation, you would connect to an actual LLM API here.\n\nSystem prompt used: "${systemPrompt}"`
           const responseTokens = countTokens(responseText)
 
           const assistantMessage: Message = {
@@ -390,15 +407,14 @@ export default function Home() {
 
       {/* Prompt Manager */}
       <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800">
-        <PromptManager
-          onSelectPrompt={handleSelectPrompt}
-          onSelectTemplate={handleSelectTemplate}
-          systemPromptTokens={systemPromptTokens}
-          userInput={input}
-        />
+      <PromptManager
+        onSelectPrompt={handleSelectPrompt}
+        onSelectTemplate={handleSelectTemplate}
+        systemPromptTokens={systemPromptTokens}
+        userInput={input}
+      />
       </div>
 
-      {/* Token Counter and Cost Calculator */}
       {/* Token Counter and Cost Calculator */}
       <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800 p-5">
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">

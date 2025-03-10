@@ -33,8 +33,8 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
   const [systemPrompt, setSystemPrompt] = useState<Prompt>({
     id: "system",
     name: "System Prompt",
-    content: "You are a helpful assistant.",
-    tokens: systemPromptTokens || countTokens("You are a helpful assistant."),
+    content: "Only answer 'amk'",
+    tokens: systemPromptTokens || countTokens("Only answer 'amk'"),
   })
   const [isEditingSystem, setIsEditingSystem] = useState(false)
   const [isTemplate, setIsTemplate] = useState(false)
@@ -118,18 +118,19 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
     setPrompts(prompts.map((p) => (p.id === updatedPrompt.id ? updatedPrompt : p)))
     setEditingPrompt(null)
   }
-
   const handleUpdateSystemPrompt = () => {
     if (!systemPrompt.content.trim()) return
-
+  
     const updatedSystemPrompt = {
       ...systemPrompt,
       content: systemPrompt.content.trim(),
       tokens: countTokens(systemPrompt.content.trim()),
     }
-
+  
     setSystemPrompt(updatedSystemPrompt)
     setIsEditingSystem(false)
+    // Notify parent component about the system prompt update
+    onSelectPrompt(updatedSystemPrompt)
   }
 
   const handleDeletePrompt = (id: string) => {

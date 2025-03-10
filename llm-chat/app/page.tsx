@@ -406,12 +406,12 @@ export default function Home() {
           model: "claude-3-haiku",
         })
         break
-      case "gemini-2.0-flash":
-        setTokenRates({
-          inputPrice: 0.0000003, // $0.0003 per 1K tokens
-          outputPrice: 0.0000006, // $0.0006 per 1K tokens
-          model: "gemini-2.0-flash",
-        })
+        case "gemini-2.0-flash":
+          setTokenRates({
+              inputPrice: 0.0001, // $0.0001 per 1K tokens
+              outputPrice: 0.0004, // $0.0004 per 1K tokens
+              model: "gemini-2.0-flash",
+          })      
         break
       case "gpt-4o":
       default:

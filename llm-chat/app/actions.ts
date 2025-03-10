@@ -1,28 +1,66 @@
 "use server"
 
 type Message = {
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system"
   content: string
   timestamp: string
+  tokens?: number
 }
 
-export async function saveConversation(messages: Message[], fileName: string) {
-  // In a real implementation, you would save to a file system
-  // For this demo, we'll return a success response
+type SaveConversationOptions = {
+  modelName: string
+  promptTemplate?: {
+    name: string
+    content: string
+  } | null
+  userInput: string
+  cost: string
+}
 
-  // Format the conversation as text
-  const conversationText = messages
-    .map((msg) => {
-      const time = new Date(msg.timestamp).toLocaleString()
-      return `[${time}] ${msg.role.toUpperCase()}:\n${msg.content}\n`
-    })
-    .join("\n---\n\n")
+export async function saveConversation(messages: Message[], fileName: string, options: SaveConversationOptions) {
+  if (messages.length === 0) {
+    return { success: false, error: "No messages to save" }
+  }
+
+  // Format the metadata section
+  const metadataSection = `--- Metadata ---
+Model Name: ${options.modelName}
+${
+  options.promptTemplate
+    ? `Prompt Template:  
+${options.promptTemplate.name}
+${options.promptTemplate.content}`
+    : "Prompt Template: None"
+}
+
+User Input: ${options.userInput}  
+Cost: ${options.cost}  
+
+`
+
+  // Format the conversation section
+  const conversationSection = `--- Conversation ---
+${messages
+  .map((msg) => {
+    const time = new Date(msg.timestamp).toLocaleString()
+    return `[${time}] ${msg.role.toUpperCase()}:
+${msg.content}
+`
+  })
+  .join("\n---\n\n")}`
+
+  // Combine metadata and conversation
+  const fullContent = metadataSection + conversationSection
 
   // In a real implementation, you would write to a file
   // For example:
-  // await fs.writeFile(`${fileName}.txt`, conversationText);
+  // await fs.writeFile(`${fileName}.txt`, fullContent);
 
   // For demo purposes, we'll just return the text that would be saved
-  return { success: true, fileName: `${fileName}.txt`, content: conversationText }
+  return {
+    success: true,
+    fileName: `${fileName}.txt`,
+    content: fullContent,
+  }
 }
 

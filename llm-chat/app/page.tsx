@@ -55,6 +55,8 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.")
   const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("You are a helpful assistant."))
   const [activeTemplate, setActiveTemplate] = useState<Prompt | null>(null)
+  // Track the last user input for saving in metadata
+  const [lastUserInput, setLastUserInput] = useState("")
 
   // Get the OpenAI hook values
   const {
@@ -221,6 +223,9 @@ export default function Home() {
     // Get the raw user input (what they typed)
     const rawUserInput = input.trim()
 
+    // Store the raw user input for metadata
+    setLastUserInput(rawUserInput)
+
     // Process the input with template if needed
     let processedInput = rawUserInput
     let displayInput = rawUserInput
@@ -329,8 +334,41 @@ export default function Home() {
 
   const handleSaveConversation = async () => {
     try {
-      await saveConversation(messages, fileName)
-      alert(`Conversation saved as ${fileName}.txt`)
+      // Prepare metadata for saving
+      const saveOptions = {
+        modelName: currentModel || "Not specified",
+        promptTemplate: activeTemplate
+          ? {
+              name: activeTemplate.name,
+              content: activeTemplate.content,
+            }
+          : null,
+        userInput: lastUserInput || "No input",
+        cost: `$${totalCost.toFixed(6)}`,
+      }
+
+      // Call the server action to save
+      const result = await saveConversation(messages, fileName, saveOptions)
+      
+      if (result.success) {
+        // Create blob and download link from the returned content
+        const blob = new Blob([result.content], { type: 'text/plain' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        
+        link.href = url
+        link.download = result.fileName
+        document.body.appendChild(link)
+        link.click()
+        
+        // Cleanup
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        console.log("Conversation saved:", result.fileName)
+      } else {
+        throw new Error(result.error)
+      }
     } catch (error) {
       console.error("Failed to save conversation:", error)
       alert("Failed to save conversation")
@@ -341,6 +379,7 @@ export default function Home() {
     if (window.confirm("Are you sure you want to clear the chat?")) {
       setMessages([])
       setActiveTemplate(null)
+      setLastUserInput("")
       // Focus back on the input field after clearing
       setTimeout(() => {
         if (inputRef.current) {

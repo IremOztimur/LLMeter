@@ -5,13 +5,15 @@ import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Download, Trash2, BarChart3, DollarSign, Info, Settings } from "lucide-react"
+import { Send, Download, Trash2, BarChart3, Info, Settings } from "lucide-react"
 import { saveConversation } from "./actions"
 import { cn } from "@/lib/utils"
 import { countTokens } from "@/lib/tokenizer"
 import ConfigModal from "@/components/config-modal"
 import { useOpenAI } from "@/lib/use-openai"
 import PromptManager, { type Prompt } from "@/components/prompt-manager"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 type Message = {
   role: "user" | "assistant" | "system"
@@ -25,6 +27,15 @@ type TokenRates = {
   outputPrice: number
   model: string
 }
+
+// Add this loading dots animation component
+const LoadingDots = () => (
+  <div className="flex space-x-2 p-4 bg-gray-800/50 rounded-lg w-24">
+    <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+    <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+    <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
+  </div>
+)
 
 export default function Home() {
   const [input, setInput] = useState("")
@@ -40,8 +51,9 @@ export default function Home() {
   })
   const [showTokenInfo, setShowTokenInfo] = useState(false)
   const [isConfigOpen, setIsConfigOpen] = useState(false)
-  const [systemPrompt, setSystemPrompt] = useState("Only say 'Hello'")
-  const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("Only say 'Hello'"))
+  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.")
+  const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("You are a helpful assistant."))
+  const [activeTemplate, setActiveTemplate] = useState<Prompt | null>(null)
 
   // Get the OpenAI hook values
   const {
@@ -68,7 +80,7 @@ export default function Home() {
       }
       return stats
     },
-    { inputTokens: systemPromptTokens, outputTokens: 0 } // Now uses current systemPromptTokens
+    { inputTokens: systemPromptTokens, outputTokens: 0 },
   )
 
   const totalTokens = tokenStats.inputTokens + tokenStats.outputTokens
@@ -102,8 +114,7 @@ export default function Home() {
     }
   }, [currentModel])
 
-  // Add this useEffect after the existing useEffect for loading system prompt
-  // This ensures the system prompt is properly initialized from localStorage
+  // Load system prompt from localStorage on mount
   useEffect(() => {
     const savedSystemPrompt = localStorage.getItem("llm_system_prompt")
     if (savedSystemPrompt) {
@@ -139,6 +150,7 @@ export default function Home() {
       // Update system prompt
       setSystemPrompt(prompt.content)
       setSystemPromptTokens(prompt.tokens)
+      setActiveTemplate(null)
 
       // Save to localStorage
       localStorage.setItem("llm_system_prompt", JSON.stringify(prompt))
@@ -147,6 +159,7 @@ export default function Home() {
     } else {
       // Set the input to the prompt content
       setInput(prompt.content)
+      setActiveTemplate(null)
       console.log("Input prompt set:", prompt.content)
 
       // Focus and resize the input
@@ -164,12 +177,21 @@ export default function Home() {
   const handleSelectTemplate = (template: Prompt, userInput: string) => {
     console.log("Selecting template:", template)
 
-    // Replace {query} with user input or placeholder if empty
-    const processedContent = template.content.replace(/{query}/g, userInput || "[Your input will appear here]")
+    // Store the template for later use
+    setActiveTemplate(template)
 
-    // Set the input to the processed template content
-    setInput(processedContent)
-    console.log("Template processed:", processedContent)
+    // If there's already input, process it immediately
+    if (userInput.trim()) {
+      // Replace {query} with user input
+      const processedContent = template.content.replace(/{query}/g, userInput)
+      setInput(processedContent)
+    } else {
+      // Just show the template with placeholder
+      const processedContent = template.content.replace(/{query}/g, "[Your input will appear here]")
+      setInput(processedContent)
+    }
+
+    console.log("Template activated:", template.name)
 
     // Focus and resize the input
     setTimeout(() => {
@@ -181,19 +203,44 @@ export default function Home() {
     }, 0)
   }
 
+  // Process the input with active template if needed
+  const processInputWithTemplate = (rawInput: string): string => {
+    if (activeTemplate && activeTemplate.isTemplate) {
+      // Replace {query} with the user's input
+      return activeTemplate.content.replace(/{query}/g, rawInput.trim())
+    }
+    return rawInput
+  }
+
   // Add debug logging to the handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
 
-    const userTokens = countTokens(input)
+    // Get the raw user input (what they typed)
+    const rawUserInput = input.trim()
 
-    // Add user message
+    // Process the input with template if needed
+    let processedInput = rawUserInput
+    let displayInput = rawUserInput
+
+    if (activeTemplate && activeTemplate.isTemplate) {
+      // For display in the UI, show what the user typed
+      displayInput = rawUserInput
+
+      // For sending to the API, process with the template
+      processedInput = processInputWithTemplate(rawUserInput)
+      console.log("Processed template input:", processedInput)
+    }
+
+    const userTokens = countTokens(processedInput)
+
+    // Add user message to UI (showing what they typed)
     const userMessage: Message = {
       role: "user",
-      content: input,
+      content: displayInput,
       timestamp: new Date().toISOString(),
-      tokens: userTokens,
+      tokens: countTokens(displayInput),
     }
 
     setMessages((prev) => [...prev, userMessage])
@@ -207,7 +254,7 @@ export default function Home() {
 
         const systemMessage = {
           role: "system" as const,
-          content: systemPrompt, // Use the current system prompt from state
+          content: systemPrompt,
         }
 
         // Create message history with system prompt first
@@ -219,7 +266,8 @@ export default function Home() {
               role: m.role as "user" | "assistant",
               content: m.content,
             })),
-          { role: "user" as const, content: input },
+          // Use the processed input for the API
+          { role: "user" as const, content: processedInput },
         ]
 
         console.log("Sending messages to API:", messageHistory)
@@ -245,7 +293,7 @@ export default function Home() {
       } else {
         // Simulate LLM response
         setTimeout(() => {
-          const responseText = `This is a simulated response to: "${input}".\n\nIn a real implementation, you would connect to an actual LLM API here.\n\nSystem prompt used: "${systemPrompt}"`
+          const responseText = `This is a simulated response to: "${processedInput}".\n\nIn a real implementation, you would connect to an actual LLM API here.\n\nSystem prompt used: "${systemPrompt}"\n\n${activeTemplate ? `Template used: "${activeTemplate.name}"` : "No template used"}`
           const responseTokens = countTokens(responseText)
 
           const assistantMessage: Message = {
@@ -258,6 +306,9 @@ export default function Home() {
           setMessages((prev) => [...prev, assistantMessage])
         }, 1000)
       }
+
+      // Reset active template after sending
+      setActiveTemplate(null)
     } catch (error) {
       console.error("Error sending message:", error)
 
@@ -288,6 +339,7 @@ export default function Home() {
   const clearConversation = () => {
     if (window.confirm("Are you sure you want to clear the chat?")) {
       setMessages([])
+      setActiveTemplate(null)
       // Focus back on the input field after clearing
       setTimeout(() => {
         if (inputRef.current) {
@@ -351,7 +403,7 @@ export default function Home() {
       />
 
       {/* Header */}
-      <div className="w-full max-w-5xl bg-gray-900 rounded-t-xl border border-gray-800 border-b-0">
+      <div className="w-full max-w-7xl bg-gray-900 rounded-t-xl border border-gray-800 border-b-0">
         <header className="p-5">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
@@ -405,180 +457,231 @@ export default function Home() {
         </header>
       </div>
 
-      {/* Prompt Manager */}
-      <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800">
-      <PromptManager
-        onSelectPrompt={handleSelectPrompt}
-        onSelectTemplate={handleSelectTemplate}
-        systemPromptTokens={systemPromptTokens}
-        userInput={input}
-      />
-      </div>
+      {/* Main Content - Side by Side Layout */}
+      <div className="w-full max-w-7xl flex flex-col md:flex-row border-x border-gray-800 bg-gray-900">
+        {/* Left Side - Prompt Manager (1/3) */}
+        <div className="w-full md:w-1/3 border-r border-gray-800">
+          <PromptManager
+            onSelectPrompt={handleSelectPrompt}
+            onSelectTemplate={handleSelectTemplate}
+            systemPromptTokens={systemPromptTokens}
+            userInput={input}
+          />
 
-      {/* Token Counter and Cost Calculator */}
-      <div className="w-full max-w-5xl bg-gray-900 border-x border-gray-800 p-5">
-        <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-orange-400" />
-              <h3 className="text-base font-medium">Token Usage</h3>
-              <button
-                onClick={() => setShowTokenInfo(!showTokenInfo)}
-                className="text-gray-400 hover:text-gray-300 transition-colors"
-                aria-label="Token information"
-              >
-                <Info className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-gray-400">
-                Model: <span className="text-gray-200">{tokenRates.model}</span>
-              </div>
-            </div>
-          </div>
-
-          {showTokenInfo && (
-            <div className="mt-2 mb-3 p-3 bg-gray-750 rounded-md text-sm text-gray-300 border border-gray-700">
-              <p className="mb-1">
-                <strong>OpenAI Tokenization:</strong>
-              </p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>1 token ≈ 4 characters in English text</li>
-                <li>1 token ≈ ¾ of a word</li>
-                <li>Spaces and punctuation count as tokens</li>
-              </ul>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="bg-gray-750 rounded p-3 border border-gray-700">
-              <div className="text-sm text-gray-400 mb-1">Input</div>
-              <div className="flex justify-between items-center">
-                <span className="text-base font-medium">{tokenStats.inputTokens.toLocaleString()} tokens</span>
-                <span className="text-sm text-gray-400">${inputCost.toFixed(6)}</span>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Includes system prompt: {systemPromptTokens} tokens</div>
-            </div>
-
-            <div className="bg-gray-750 rounded p-3 border border-gray-700">
-              <div className="text-sm text-gray-400 mb-1">Output</div>
-              <div className="flex justify-between items-center">
-                <span className="text-base font-medium">{tokenStats.outputTokens.toLocaleString()} tokens</span>
-                <span className="text-sm text-gray-400">${outputCost.toFixed(6)}</span>
-              </div>
-            </div>
-
-            <div className="bg-gray-750 rounded p-3 border border-gray-700">
-              <div className="text-sm text-gray-400 mb-1">Total</div>
-              <div className="flex justify-between items-center">
-                <span className="text-base font-medium">{totalTokens.toLocaleString()} tokens</span>
-                <span className="text-sm text-orange-400 font-medium">${totalCost.toFixed(6)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 text-sm text-gray-500 flex items-center gap-1">
-            <DollarSign className="h-3.5 w-3.5" />
-            <span>Cost calculation: (input price × input tokens) + (output price × output tokens)</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Chat container */}
-      <div className="w-full max-w-5xl h-[65vh] bg-gray-900 border-x border-gray-800 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700">
-        <div className="p-5 space-y-5">
-          {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              <div className="text-center space-y-3">
-                <div className="inline-block p-4 rounded-full bg-gray-800 mb-3">
-                  <Send className="h-7 w-7 text-orange-500" />
+          {/* Template Status Indicator */}
+          {activeTemplate && (
+            <div className="p-4 border-t border-gray-800">
+              <div className="bg-orange-500/20 rounded-lg border border-orange-500/30 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                    <h3 className="text-sm font-medium text-orange-400">Active Template</h3>
+                  </div>
+                  <button
+                    onClick={() => setActiveTemplate(null)}
+                    className="text-xs text-orange-400 hover:text-orange-300"
+                  >
+                    Clear
+                  </button>
                 </div>
-                <p className="text-xl">Start a conversation to test your LLM model</p>
-                <p className="text-base">
-                  {isConfigured ? `Using ${currentModel} API` : "Configure API key to use real LLM models"}
+                <p className="text-xs text-gray-300 mt-2">{activeTemplate.name}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Type your input and it will be processed with this template.
                 </p>
               </div>
             </div>
-          ) : (
-            messages.map((message, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "flex",
-                  message.role === "user" ? "justify-end" : "justify-start",
-                  "transition-opacity duration-300 ease-in-out",
-                )}
-              >
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-2xl px-5 py-4 shadow-md animate-fadeIn",
-                    message.role === "user"
-                      ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white"
-                      : "bg-gray-800 text-gray-100 border border-gray-700",
-                  )}
-                >
-                  <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-                  <div className="flex justify-between items-center mt-2 space-x-6">
-                    <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
-                    {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
-                  </div>
-                </div>
-              </div>
-            ))
           )}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 max-w-[80%] shadow-md">
-                <div className="flex space-x-3">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-bounce"
-                    style={{ animationDelay: "0ms" }}
-                  ></div>
-                  <div
-                    className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  ></div>
-                  <div
-                    className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  ></div>
+        </div>
+
+        {/* Right Side - Chat Area (2/3) */}
+        <div className="w-full md:w-2/3 flex flex-col">
+          {/* Token Usage Header */}
+          <div className="p-3 border-b border-gray-800 bg-gray-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-orange-400" />
+                <h3 className="text-sm font-medium">Token Usage</h3>
+                <button
+                  onClick={() => setShowTokenInfo(!showTokenInfo)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors"
+                  aria-label="Token information"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span>
+                    Input: <span className="text-gray-200">{tokenStats.inputTokens.toLocaleString()}</span>
+                  </span>
+                  <span className="mx-1">|</span>
+                  <span>
+                    Output: <span className="text-gray-200">{tokenStats.outputTokens.toLocaleString()}</span>
+                  </span>
+                  <span className="mx-1">|</span>
+                  <span>
+                    Total: <span className="text-orange-400 font-medium">{totalTokens.toLocaleString()}</span>
+                  </span>
+                </div>
+                <div className="text-xs text-gray-400">
+                  Cost: <span className="text-orange-400 font-medium">${totalCost.toFixed(6)}</span>
                 </div>
               </div>
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
 
-      {/* Input area */}
-      <div className="w-full max-w-5xl bg-gray-900 rounded-b-xl border border-gray-800 border-t-0 p-5">
-        <form onSubmit={handleSubmit} className="flex gap-3">
-          <div className="flex-1 flex flex-col">
-            <Textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message here..."
-              className="min-h-[70px] bg-gray-800 border-gray-700 focus-visible:ring-orange-500 resize-none text-base"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSubmit(e)
-                }
-              }}
-              style={{ overflow: "hidden" }}
-            />
-            {input && <div className="text-xs text-gray-400 mt-1 self-end">{currentInputTokens} tokens</div>}
+            {showTokenInfo && (
+              <div className="mt-2 p-2 bg-gray-750 rounded-md text-xs text-gray-300 border border-gray-700">
+                <p className="mb-1">
+                  <strong>OpenAI Tokenization:</strong> 1 token ≈ 4 chars or ¾ of a word | Model:{" "}
+                  <span className="text-gray-200">{currentModel}</span> | System prompt:{" "}
+                  <span className="text-gray-200">{systemPromptTokens}</span> tokens
+                </p>
+              </div>
+            )}
           </div>
-          <Button
-            type="submit"
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 px-5 self-start"
-            disabled={isLoading || !input.trim()}
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        </form>
+
+          {/* Chat container */}
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 min-h-[60vh] max-h-[70vh]">
+            <div className="p-5 space-y-5">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center space-y-3">
+                    <div className="inline-block p-4 rounded-full bg-gray-800 mb-3">
+                      <Send className="h-7 w-7 text-orange-500" />
+                    </div>
+                    <p className="text-xl">Start a conversation to test your LLM model</p>
+                    <p className="text-base">
+                      {isConfigured ? `Using ${currentModel} API` : "Configure API key to use real LLM models"}
+                    </p>
+                    {activeTemplate && (
+                      <p className="text-sm mt-2 text-orange-400">
+                        Template "{activeTemplate.name}" is active. Your input will be processed with this template.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex",
+                      message.role === "user" ? "justify-end" : "justify-start",
+                      "transition-opacity duration-300 ease-in-out",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[90%] rounded-2xl px-5 py-4 shadow-md animate-fadeIn",
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white"
+                          : "bg-gray-800 text-gray-100 border border-gray-700",
+                      )}
+                    >
+                      <div className="prose prose-invert max-w-none">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
+                            h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                            h4: ({ node, ...props }) => <h4 className="text-base font-bold mb-2" {...props} />,
+                            p: ({ node, ...props }) => <p className="mb-4 leading-relaxed" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
+                            li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                            strong: ({ node, ...props }) => <strong className="font-bold text-orange-400" {...props} />,
+                            em: ({ node, ...props }) => <em className="italic text-gray-300" {...props} />,
+                            blockquote: ({ node, ...props }) => (
+                              <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
+                            ),
+                            code: ({ node, inline, ...props }) =>
+                              inline ? (
+                                <code className="bg-gray-700 rounded px-1 py-0.5 text-sm" {...props} />
+                              ) : (
+                                <code
+                                  className="block bg-gray-700 rounded p-4 my-4 text-sm overflow-x-auto"
+                                  {...props}
+                                />
+                              ),
+                            a: ({ node, ...props }) => (
+                              <a className="text-orange-400 hover:text-orange-300 underline" {...props} />
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                      <div className="flex justify-between items-center mt-2 space-x-6">
+                        <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
+                        {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 max-w-[80%] shadow-md">
+                    <LoadingDots />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Input area */}
+          <div className="p-4 border-t border-gray-800">
+            {activeTemplate && (
+              <div className="mb-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-orange-400">Template: {activeTemplate.name}</span>
+                  <button
+                    onClick={() => setActiveTemplate(null)}
+                    className="text-xs text-orange-400 hover:text-orange-300"
+                  >
+                    Clear Template
+                  </button>
+                </div>
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="flex gap-3">
+              <div className="flex-1 flex flex-col">
+                <Textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={
+                    activeTemplate ? "Type your input to use with the template..." : "Type your message here..."
+                  }
+                  className="min-h-[70px] bg-gray-800 border-gray-700 focus-visible:ring-orange-500 resize-none text-base"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSubmit(e)
+                    }
+                  }}
+                  style={{ overflow: "hidden" }}
+                />
+                <div className="flex justify-between mt-1">
+                  <div className="text-xs text-gray-400">
+                    {activeTemplate && <span>Template mode: Your input will be processed with the template</span>}
+                  </div>
+                  {input && <div className="text-xs text-gray-400 self-end">{currentInputTokens} tokens</div>}
+                </div>
+              </div>
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 px-5 self-start"
+                disabled={isLoading || !input.trim()}
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            </form>
+          </div>
+        </div>
       </div>
     </main>
   )

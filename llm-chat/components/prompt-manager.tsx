@@ -25,7 +25,7 @@ interface PromptManagerProps {
 
 const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, userInput }: PromptManagerProps) => {
   const [prompts, setPrompts] = useState<Prompt[]>([])
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true) // Default to expanded in the new layout
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null)
   const [newPromptName, setNewPromptName] = useState("")
   const [newPromptContent, setNewPromptContent] = useState("")
@@ -60,6 +60,14 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
       }
     }
   }, [])
+
+  // Update system prompt tokens when they change from parent
+  useEffect(() => {
+    setSystemPrompt((prev) => ({
+      ...prev,
+      tokens: systemPromptTokens,
+    }))
+  }, [systemPromptTokens])
 
   // Save prompts to localStorage when they change
   useEffect(() => {
@@ -118,17 +126,19 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
     setPrompts(prompts.map((p) => (p.id === updatedPrompt.id ? updatedPrompt : p)))
     setEditingPrompt(null)
   }
+
   const handleUpdateSystemPrompt = () => {
     if (!systemPrompt.content.trim()) return
-  
+
     const updatedSystemPrompt = {
       ...systemPrompt,
       content: systemPrompt.content.trim(),
       tokens: countTokens(systemPrompt.content.trim()),
     }
-  
+
     setSystemPrompt(updatedSystemPrompt)
     setIsEditingSystem(false)
+
     // Notify parent component about the system prompt update
     onSelectPrompt(updatedSystemPrompt)
   }
@@ -149,18 +159,12 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
 
     if (prompt.id === "system") {
       onSelectPrompt(prompt)
-      // Only collapse if it's not the system prompt (to allow users to see the effect)
-      if (prompt.id !== "system") {
-        setIsExpanded(false)
-      }
     } else if (prompt.isTemplate) {
       // For templates, we need to replace {query} with the user input
       onSelectTemplate(prompt, userInput)
-      setIsExpanded(false)
     } else {
       // For regular prompts
       onSelectPrompt(prompt)
-      setIsExpanded(false)
     }
   }
 
@@ -183,346 +187,359 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
   }
 
   return (
-    <div className="w-full bg-gray-900 border-x border-gray-800 p-5">
-      <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-        <div
-          className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-750 transition-colors"
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-gray-800 bg-gray-800 flex justify-between items-center">
+        <h3 className="text-base font-medium flex items-center gap-2">
+          <span className="bg-orange-500 h-4 w-4 rounded-full flex items-center justify-center">
+            <span className="text-xs font-bold text-white">{isExpanded ? "-" : "+"}</span>
+          </span>
+          Prompt Manager
+        </h3>
+        <button
           onClick={() => setIsExpanded(!isExpanded)}
+          className="text-gray-400 hover:text-gray-200 transition-colors"
         >
-          <h3 className="text-base font-medium flex items-center gap-2">
-            <span className="bg-orange-500 h-4 w-4 rounded-full flex items-center justify-center">
-              <span className="text-xs font-bold text-white">{isExpanded ? "-" : "+"}</span>
-            </span>
-            Prompt Manager
-            <span className="text-sm text-gray-400 ml-2">({prompts.length} saved prompts)</span>
-          </h3>
-          <div className="text-sm text-gray-400">System Prompt: {systemPrompt.tokens} tokens</div>
-        </div>
+          {isExpanded ? "Collapse" : "Expand"}
+        </button>
+      </div>
 
-        {isExpanded && (
-          <div className="border-t border-gray-700">
-            {/* System Prompt Section */}
-            <div className="p-4 border-b border-gray-700 bg-gray-750">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="text-sm font-medium text-gray-300">System Prompt</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">{systemPrompt.tokens} tokens</span>
-                  {!isEditingSystem ? (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => setIsEditingSystem(true)}
-                        className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleCopyPrompt(systemPrompt.content)}
-                        className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={handleUpdateSystemPrompt}
-                        className="p-1 text-green-400 hover:text-green-300 transition-colors"
-                      >
-                        <Save className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setIsEditingSystem(false)}
-                        className="p-1 text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
+      {isExpanded && (
+        <div className="flex-1 overflow-y-auto">
+          {/* System Prompt Section */}
+          <div className="p-4 border-b border-gray-700 bg-gray-750">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-medium text-gray-300">System Prompt</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">{systemPrompt.tokens} tokens</span>
+                {!isEditingSystem ? (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setIsEditingSystem(true)}
+                      className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleCopyPrompt(systemPrompt.content)}
+                      className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={handleUpdateSystemPrompt}
+                      className="p-1 text-green-400 hover:text-green-300 transition-colors"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingSystem(false)}
+                      className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
-
-              {isEditingSystem ? (
-                <textarea
-                  value={systemPrompt.content}
-                  onChange={(e) =>
-                    setSystemPrompt({
-                      ...systemPrompt,
-                      content: e.target.value,
-                      tokens: countTokens(e.target.value),
-                    })
-                  }
-                  className="w-full min-h-[80px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                  placeholder="Enter system prompt..."
-                />
-              ) : (
-                <div className="bg-gray-800 rounded p-2 text-sm text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
-                  {systemPrompt.content}
-                </div>
-              )}
             </div>
 
-            {/* User Prompts List */}
-            <div className="max-h-[400px] overflow-y-auto">
-              {prompts.length === 0 && !isCreating ? (
-                <div className="p-4 text-center text-gray-400 text-sm">
-                  No saved prompts. Create one to get started.
-                </div>
-              ) : (
-                <ul className="divide-y divide-gray-700">
-                  {prompts.map((prompt) => (
-                    <li key={prompt.id} className="p-3 hover:bg-gray-750 transition-colors">
-                      {editingPrompt?.id === prompt.id ? (
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <input
-                              type="text"
-                              value={editingPrompt.name}
-                              onChange={(e) =>
-                                setEditingPrompt({
-                                  ...editingPrompt,
-                                  name: e.target.value,
-                                })
-                              }
-                              className="w-full px-3 py-1.5 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                              placeholder="Prompt name"
-                            />
-                            <div className="flex items-center ml-2">
-                              <label className="flex items-center cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={editingPrompt.isTemplate}
-                                  onChange={(e) =>
-                                    setEditingPrompt({
-                                      ...editingPrompt,
-                                      isTemplate: e.target.checked,
-                                    })
-                                  }
-                                  className="sr-only"
-                                />
-                                <div
-                                  className={cn(
-                                    "w-9 h-5 rounded-full transition-colors flex items-center px-1",
-                                    editingPrompt.isTemplate ? "bg-orange-500" : "bg-gray-600",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "w-3 h-3 rounded-full bg-white transition-transform",
-                                      editingPrompt.isTemplate ? "translate-x-4" : "translate-x-0",
-                                    )}
-                                  ></div>
-                                </div>
-                                <span className="ml-2 text-xs text-gray-300">Template</span>
-                              </label>
-                            </div>
-                          </div>
-                          <textarea
-                            ref={textareaRef}
-                            value={editingPrompt.content}
+            {isEditingSystem ? (
+              <textarea
+                value={systemPrompt.content}
+                onChange={(e) =>
+                  setSystemPrompt({
+                    ...systemPrompt,
+                    content: e.target.value,
+                    tokens: countTokens(e.target.value),
+                  })
+                }
+                className="w-full min-h-[80px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                placeholder="Enter system prompt..."
+              />
+            ) : (
+              <div className="bg-gray-800 rounded p-2 text-sm text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                {systemPrompt.content}
+              </div>
+            )}
+
+            {!isEditingSystem && (
+              <button
+                onClick={(e) => handleSelectPrompt(systemPrompt, e)}
+                className="mt-2 px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30 transition-colors"
+              >
+                Apply System Prompt
+              </button>
+            )}
+          </div>
+
+          {/* User Prompts List */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-3 border-b border-gray-700 bg-gray-800">
+              <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium text-gray-300">Saved Prompts</h4>
+                <span className="text-xs text-gray-400">{prompts.length} prompts</span>
+              </div>
+            </div>
+
+            {prompts.length === 0 && !isCreating ? (
+              <div className="p-4 text-center text-gray-400 text-sm">No saved prompts. Create one to get started.</div>
+            ) : (
+              <ul className="divide-y divide-gray-700">
+                {prompts.map((prompt) => (
+                  <li key={prompt.id} className="p-3 hover:bg-gray-750 transition-colors">
+                    {editingPrompt?.id === prompt.id ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <input
+                            type="text"
+                            value={editingPrompt.name}
                             onChange={(e) =>
                               setEditingPrompt({
                                 ...editingPrompt,
-                                content: e.target.value,
-                                tokens: countTokens(e.target.value),
+                                name: e.target.value,
                               })
                             }
-                            className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                            placeholder="Enter prompt content..."
+                            className="w-full px-3 py-1.5 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            placeholder="Prompt name"
                           />
-                          <div className="flex justify-between">
-                            <span className="text-xs text-gray-400">{editingPrompt.tokens} tokens</span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={handleUpdatePrompt}
-                                className="px-2 py-1 bg-green-600/30 text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
+                          <div className="flex items-center ml-2">
+                            <label className="flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editingPrompt.isTemplate}
+                                onChange={(e) =>
+                                  setEditingPrompt({
+                                    ...editingPrompt,
+                                    isTemplate: e.target.checked,
+                                  })
+                                }
+                                className="sr-only"
+                              />
+                              <div
+                                className={cn(
+                                  "w-9 h-5 rounded-full transition-colors flex items-center px-1",
+                                  editingPrompt.isTemplate ? "bg-orange-500" : "bg-gray-600",
+                                )}
                               >
-                                Save
+                                <div
+                                  className={cn(
+                                    "w-3 h-3 rounded-full bg-white transition-transform",
+                                    editingPrompt.isTemplate ? "translate-x-4" : "translate-x-0",
+                                  )}
+                                ></div>
+                              </div>
+                              <span className="ml-2 text-xs text-gray-300">Template</span>
+                            </label>
+                          </div>
+                        </div>
+                        <textarea
+                          ref={textareaRef}
+                          value={editingPrompt.content}
+                          onChange={(e) =>
+                            setEditingPrompt({
+                              ...editingPrompt,
+                              content: e.target.value,
+                              tokens: countTokens(e.target.value),
+                            })
+                          }
+                          className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                          placeholder="Enter prompt content..."
+                        />
+                        <div className="flex justify-between">
+                          <span className="text-xs text-gray-400">{editingPrompt.tokens} tokens</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleUpdatePrompt}
+                              className="px-2 py-1 bg-green-600/30 text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingPrompt(null)}
+                              className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <h4 className="text-sm font-medium text-gray-200">{prompt.name}</h4>
+                            {prompt.isTemplate && (
+                              <span className="ml-2 px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">
+                                Template
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">{prompt.tokens} tokens</span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setEditingPrompt(prompt)}
+                                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button
-                                onClick={() => setEditingPrompt(null)}
-                                className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
+                                onClick={() => handleDeletePrompt(prompt.id)}
+                                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
                               >
-                                Cancel
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleCopyPrompt(prompt.content)}
+                                className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           </div>
                         </div>
-                      ) : (
-                        <div>
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center">
-                              <h4 className="text-sm font-medium text-gray-200">{prompt.name}</h4>
-                              {prompt.isTemplate && (
-                                <span className="ml-2 px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs">
-                                  Template
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-400">{prompt.tokens} tokens</span>
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() => setEditingPrompt(prompt)}
-                                  className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeletePrompt(prompt.id)}
-                                  className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleCopyPrompt(prompt.content)}
-                                  className="p-1 text-gray-400 hover:text-gray-200 transition-colors"
-                                >
-                                  <Copy className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
 
-                          {prompt.isTemplate ? (
-                            <div className="mt-2 space-y-2">
-                              <div className="bg-gray-750 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
-                                {prompt.content}
-                              </div>
-                              <div className="bg-gray-900/50 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap">
-                                <div className="flex items-center mb-1">
-                                  <Code className="h-3 w-3 mr-1 text-orange-400" />
-                                  <span className="text-orange-400 font-medium">Preview with current input:</span>
-                                </div>
-                                {previewTemplate(prompt.content, userInput)}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-1 bg-gray-750 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+                        {prompt.isTemplate ? (
+                          <div className="mt-2 space-y-2">
+                            <div className="bg-gray-750 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
                               {prompt.content}
                             </div>
-                          )}
+                            <div className="bg-gray-900/50 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap">
+                              <div className="flex items-center mb-1">
+                                <Code className="h-3 w-3 mr-1 text-orange-400" />
+                                <span className="text-orange-400 font-medium">Preview with current input:</span>
+                              </div>
+                              {previewTemplate(prompt.content, userInput)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-1 bg-gray-750 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+                            {prompt.content}
+                          </div>
+                        )}
 
+                        <div className="mt-2 flex gap-2">
                           <button
                             onClick={(e) => handleSelectPrompt(prompt, e)}
-                            className="mt-2 px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30 transition-colors"
+                            className="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs hover:bg-orange-600/30 transition-colors"
                           >
                             {prompt.isTemplate ? "Use Template" : "Use Prompt"}
                           </button>
                         </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-              {/* Create New Prompt Form */}
-              {isCreating && (
-                <div className="p-4 border-t border-gray-700 space-y-3">
-                  <h4 className="text-sm font-medium text-gray-300">Create New Prompt</h4>
-                  <div className="flex justify-between">
-                    <input
-                      type="text"
-                      value={newPromptName}
-                      onChange={(e) => setNewPromptName(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="Prompt name"
-                    />
-                    <div className="flex items-center ml-2">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isTemplate}
-                          onChange={(e) => setIsTemplate(e.target.checked)}
-                          className="sr-only"
-                        />
+            {/* Create New Prompt Form */}
+            {isCreating && (
+              <div className="p-4 border-t border-gray-700 space-y-3">
+                <h4 className="text-sm font-medium text-gray-300">Create New Prompt</h4>
+                <div className="flex justify-between">
+                  <input
+                    type="text"
+                    value={newPromptName}
+                    onChange={(e) => setNewPromptName(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Prompt name"
+                  />
+                  <div className="flex items-center ml-2">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isTemplate}
+                        onChange={(e) => setIsTemplate(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={cn(
+                          "w-9 h-5 rounded-full transition-colors flex items-center px-1",
+                          isTemplate ? "bg-orange-500" : "bg-gray-600",
+                        )}
+                      >
                         <div
                           className={cn(
-                            "w-9 h-5 rounded-full transition-colors flex items-center px-1",
-                            isTemplate ? "bg-orange-500" : "bg-gray-600",
+                            "w-3 h-3 rounded-full bg-white transition-transform",
+                            isTemplate ? "translate-x-4" : "translate-x-0",
                           )}
-                        >
-                          <div
-                            className={cn(
-                              "w-3 h-3 rounded-full bg-white transition-transform",
-                              isTemplate ? "translate-x-4" : "translate-x-0",
-                            )}
-                          ></div>
-                        </div>
-                        <span className="ml-2 text-xs text-gray-300">Template</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {isTemplate && (
-                    <div className="bg-gray-750 rounded p-2 text-xs text-gray-400 border border-gray-700">
-                      <p>
-                        Use <code className="bg-gray-700 px-1 rounded">{"{query}"}</code> in your template to insert the
-                        user's input.
-                      </p>
-                    </div>
-                  )}
-
-                  <textarea
-                    ref={textareaRef}
-                    value={newPromptContent}
-                    onChange={(e) => setNewPromptContent(e.target.value)}
-                    className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                    placeholder={
-                      isTemplate ? "Enter prompt template with {query} placeholder..." : "Enter prompt content..."
-                    }
-                  />
-
-                  {isTemplate && userInput && (
-                    <div className="bg-gray-900/50 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap">
-                      <div className="flex items-center mb-1">
-                        <Code className="h-3 w-3 mr-1 text-orange-400" />
-                        <span className="text-orange-400 font-medium">Preview with current input:</span>
+                        ></div>
                       </div>
-                      {previewTemplate(newPromptContent, userInput)}
-                    </div>
-                  )}
-
-                  <div className="flex justify-between">
-                    <span className="text-xs text-gray-400">{countTokens(newPromptContent)} tokens</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleCreatePrompt}
-                        className="px-2 py-1 bg-green-600/30 text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsCreating(false)
-                          setIsTemplate(false)
-                          setNewPromptName("")
-                          setNewPromptContent("")
-                        }}
-                        className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                      <span className="ml-2 text-xs text-gray-300">Template</span>
+                    </label>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Create Prompt Button */}
-            {!isCreating && (
-              <div className="p-3 border-t border-gray-700">
-                <Button
-                  onClick={() => setIsCreating(true)}
-                  className="w-full bg-gray-750 hover:bg-gray-700 text-gray-300 border border-gray-600"
-                  size="sm"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Prompt
-                </Button>
+                {isTemplate && (
+                  <div className="bg-gray-750 rounded p-2 text-xs text-gray-400 border border-gray-700">
+                    <p>
+                      Use <code className="bg-gray-700 px-1 rounded">{"{query}"}</code> in your template to insert the
+                      user's input.
+                    </p>
+                  </div>
+                )}
+
+                <textarea
+                  ref={textareaRef}
+                  value={newPromptContent}
+                  onChange={(e) => setNewPromptContent(e.target.value)}
+                  className="w-full min-h-[100px] px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  placeholder={
+                    isTemplate ? "Enter prompt template with {query} placeholder..." : "Enter prompt content..."
+                  }
+                />
+
+                {isTemplate && userInput && (
+                  <div className="bg-gray-900/50 rounded p-2 text-xs text-gray-300 border border-gray-700 whitespace-pre-wrap">
+                    <div className="flex items-center mb-1">
+                      <Code className="h-3 w-3 mr-1 text-orange-400" />
+                      <span className="text-orange-400 font-medium">Preview with current input:</span>
+                    </div>
+                    {previewTemplate(newPromptContent, userInput)}
+                  </div>
+                )}
+
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">{countTokens(newPromptContent)} tokens</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCreatePrompt}
+                      className="px-2 py-1 bg-green-600/30 text-green-400 rounded text-xs hover:bg-green-600/50 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsCreating(false)
+                        setIsTemplate(false)
+                        setNewPromptName("")
+                        setNewPromptContent("")
+                      }}
+                      className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Create Prompt Button */}
+      <div className="p-3 border-t border-gray-700 mt-auto">
+        <Button
+          onClick={() => setIsCreating(true)}
+          className="w-full bg-gray-750 hover:bg-gray-700 text-gray-300 border border-gray-600"
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create New Prompt
+        </Button>
       </div>
     </div>
   )

@@ -394,16 +394,9 @@ export default function Home() {
     switch (model) {
       case "gpt-3.5-turbo":
         setTokenRates({
-          inputPrice: 0.0000001, // $0.0001 per 1K tokens
-          outputPrice: 0.0000002, // $0.0002 per 1K tokens
-          model: "gpt-3.5-turbo",
-        })
-        break
-      case "claude-3-haiku":
-        setTokenRates({
-          inputPrice: 0.0000008, // $0.0008 per 1K tokens
-          outputPrice: 0.0000024, // $0.0024 per 1K tokens
-          model: "claude-3-haiku",
+            inputPrice: 0.0005, // $0.0005 per 1K tokens
+            outputPrice: 0.0015, // $0.0015 per 1K tokens
+            model: "gpt-3.5-turbo",
         })
         break
         case "gemini-2.0-flash":
@@ -413,12 +406,11 @@ export default function Home() {
               model: "gemini-2.0-flash",
           })      
         break
-      case "gpt-4o":
       default:
         setTokenRates({
-          inputPrice: 0.0000005, // $0.0005 per 1K tokens
-          outputPrice: 0.0000015, // $0.0015 per 1K tokens
-          model: "gpt-4o",
+          inputPrice: 0.0001, // $0.0001 per 1K tokens
+          outputPrice: 0.0004, // $0.0004 per 1K tokens
+          model: "gemini-2.0-flash",
         })
     }
 

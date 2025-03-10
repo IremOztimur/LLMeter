@@ -54,6 +54,7 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.")
   const [systemPromptTokens, setSystemPromptTokens] = useState(countTokens("You are a helpful assistant."))
   const [activeTemplate, setActiveTemplate] = useState<Prompt | null>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   // Get the OpenAI hook values
   const {
@@ -100,9 +101,15 @@ export default function Home() {
   }, [input])
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      })
+    }
   }
 
+  // Update scroll when messages change
   useEffect(() => {
     scrollToBottom()
   }, [messages])
@@ -542,92 +549,62 @@ export default function Home() {
           </div>
 
           {/* Chat container */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 min-h-[60vh] max-h-[70vh]">
-            <div className="p-5 space-y-5">
-              {messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <div className="text-center space-y-3">
-                    <div className="inline-block p-4 rounded-full bg-gray-800 mb-3">
-                      <Send className="h-7 w-7 text-orange-500" />
-                    </div>
-                    <p className="text-xl">Start a conversation to test your LLM model</p>
-                    <p className="text-base">
-                      {isConfigured ? `Using ${currentModel} API` : "Configure API key to use real LLM models"}
-                    </p>
-                    {activeTemplate && (
-                      <p className="text-sm mt-2 text-orange-400">
-                        Template "{activeTemplate.name}" is active. Your input will be processed with this template.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "flex",
-                      message.role === "user" ? "justify-end" : "justify-start",
-                      "transition-opacity duration-300 ease-in-out",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[90%] rounded-2xl px-5 py-4 shadow-md animate-fadeIn",
-                        message.role === "user"
-                          ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white"
-                          : "bg-gray-800 text-gray-100 border border-gray-700",
-                      )}
+          <div 
+            ref={chatContainerRef}
+            className="w-full max-w-6xl bg-gray-900 border-x border-gray-800 overflow-y-auto flex-1 max-h-[60vh]"
+          >
+            <div className="space-y-6 p-6">
+              {messages.map((message, index) => (
+                <div
+                  key={message.timestamp}
+                  className={cn(
+                    "flex flex-col space-y-2 p-6 rounded-lg",
+                    message.role === "user" 
+                      ? "bg-gray-800 ml-auto max-w-[85%]" 
+                      : "bg-gray-800/50 mr-auto max-w-[85%]"
+                  )}
+                >
+                  <div className="prose prose-invert max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                        h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
+                        h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
+                        h4: ({ node, ...props }) => <h4 className="text-base font-bold mb-2" {...props} />,
+                        p: ({ node, ...props }) => <p className="mb-4 leading-relaxed" {...props} />,
+                        ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
+                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="font-bold text-orange-400" {...props} />,
+                        em: ({ node, ...props }) => <em className="italic text-gray-300" {...props} />,
+                        blockquote: ({ node, ...props }) => (
+                          <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
+                        ),
+                        code: ({ node, inline, ...props }) =>
+                          inline ? (
+                            <code className="bg-gray-700 rounded px-1 py-0.5 text-sm" {...props} />
+                          ) : (
+                            <code
+                              className="block bg-gray-700 rounded p-4 my-4 text-sm overflow-x-auto"
+                              {...props}
+                            />
+                          ),
+                        a: ({ node, ...props }) => (
+                          <a className="text-orange-400 hover:text-orange-300 underline" {...props} />
+                        ),
+                      }}
                     >
-                      <div className="prose prose-invert max-w-none">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4" {...props} />,
-                            h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3" {...props} />,
-                            h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2" {...props} />,
-                            h4: ({ node, ...props }) => <h4 className="text-base font-bold mb-2" {...props} />,
-                            p: ({ node, ...props }) => <p className="mb-4 leading-relaxed" {...props} />,
-                            ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
-                            ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
-                            li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                            strong: ({ node, ...props }) => <strong className="font-bold text-orange-400" {...props} />,
-                            em: ({ node, ...props }) => <em className="italic text-gray-300" {...props} />,
-                            blockquote: ({ node, ...props }) => (
-                              <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
-                            ),
-                            code: ({ node, inline, ...props }) =>
-                              inline ? (
-                                <code className="bg-gray-700 rounded px-1 py-0.5 text-sm" {...props} />
-                              ) : (
-                                <code
-                                  className="block bg-gray-700 rounded p-4 my-4 text-sm overflow-x-auto"
-                                  {...props}
-                                />
-                              ),
-                            a: ({ node, ...props }) => (
-                              <a className="text-orange-400 hover:text-orange-300 underline" {...props} />
-                            ),
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                      <div className="flex justify-between items-center mt-2 space-x-6">
-                        <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
-                        {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
-                      </div>
-                    </div>
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
-                ))
-              )}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-800 border border-gray-700 rounded-2xl px-5 py-4 max-w-[80%] shadow-md">
-                    <LoadingDots />
+                  <div className="flex justify-between items-center mt-2 space-x-6">
+                    <div className="text-xs opacity-70">{new Date(message.timestamp).toLocaleTimeString()}</div>
+                    {message.tokens && <div className="text-xs opacity-70">{message.tokens} tokens</div>}
                   </div>
                 </div>
-              )}
+              ))}
+              {isLoading && <LoadingDots />}
               <div ref={messagesEndRef} />
             </div>
           </div>

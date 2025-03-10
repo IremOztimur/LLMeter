@@ -70,8 +70,46 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            color: '#fff',
+            a: {
+              color: '#f97316',
+              '&:hover': {
+                color: '#fb923c',
+              },
+            },
+            strong: {
+              color: '#f97316',
+            },
+            h1: {
+              color: '#fff',
+            },
+            h2: {
+              color: '#fff',
+            },
+            h3: {
+              color: '#fff',
+            },
+            h4: {
+              color: '#fff',
+            },
+            code: {
+              color: '#fff',
+            },
+            blockquote: {
+              borderLeftColor: '#f97316',
+              color: '#d1d5db',
+            },
+          },
+        },
+      },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require('@tailwindcss/typography'),
+    require("tailwindcss-animate"),
+  ],
 }
 

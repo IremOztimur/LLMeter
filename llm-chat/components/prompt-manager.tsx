@@ -33,8 +33,8 @@ const PromptManager = ({ onSelectPrompt, onSelectTemplate, systemPromptTokens, u
   const [systemPrompt, setSystemPrompt] = useState<Prompt>({
     id: "system",
     name: "System Prompt",
-    content: "Only answer 'amk'",
-    tokens: systemPromptTokens || countTokens("Only answer 'amk'"),
+    content: "You are a helpful assistant.",
+    tokens: systemPromptTokens || countTokens("You are a helpful assistant."),
   })
   const [isEditingSystem, setIsEditingSystem] = useState(false)
   const [isTemplate, setIsTemplate] = useState(false)

@@ -115,14 +115,14 @@ export default function Home() {
       } catch (e) {
         console.error("Failed to parse saved system prompt:", e)
         // Set default if parsing fails
-        setSystemPrompt("Only answer 'zort'")
-        setSystemPromptTokens(countTokens("Only answer 'zort'"))
+        setSystemPrompt("You are a helpful assistant.")
+        setSystemPromptTokens(countTokens("You are a helpful assistant."))
       }
     } else {
       // Set default if no saved prompt
       console.log("No saved system prompt found, using default")
-      setSystemPrompt("Only answer 'zort'")
-      setSystemPromptTokens(countTokens("Only answer 'zort'"))
+      setSystemPrompt("You are a helpful assistant.")
+      setSystemPromptTokens(countTokens("You are a helpful assistant."))
     }
   }, [])
 

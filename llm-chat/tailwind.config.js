@@ -1,3 +1,4 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -50,6 +51,9 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        gray: {
+          750: "#2d3748",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -70,46 +74,8 @@ module.exports = {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
-      typography: {
-        DEFAULT: {
-          css: {
-            color: '#fff',
-            a: {
-              color: '#f97316',
-              '&:hover': {
-                color: '#fb923c',
-              },
-            },
-            strong: {
-              color: '#f97316',
-            },
-            h1: {
-              color: '#fff',
-            },
-            h2: {
-              color: '#fff',
-            },
-            h3: {
-              color: '#fff',
-            },
-            h4: {
-              color: '#fff',
-            },
-            code: {
-              color: '#fff',
-            },
-            blockquote: {
-              borderLeftColor: '#f97316',
-              color: '#d1d5db',
-            },
-          },
-        },
-      },
     },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-    require("tailwindcss-animate"),
-  ],
+  plugins: [require("tailwindcss-animate")],
 }
 

@@ -46,8 +46,8 @@ export default function Home() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [fileName, setFileName] = useState("conversation")
   const [tokenRates, setTokenRates] = useState<TokenRates>({
-    inputPrice: 0.0000003, // $0.0003 per 1K tokens (for Gemini)
-    outputPrice: 0.0000006, // $0.0006 per 1K tokens (for Gemini)
+    inputPrice: 0.1 / 1_000_000,  // $0.0000001 per token
+    outputPrice: 0.4 / 1_000_000, // $0.0000004 per token
     model: "gemini-2.0-flash",
   })
   const [showTokenInfo, setShowTokenInfo] = useState(false)
@@ -78,18 +78,27 @@ export default function Home() {
       const tokens = message.tokens || 0
       if (message.role === "user") {
         stats.inputTokens += tokens
+        stats.inputCost += tokens * tokenRates.inputPrice
+        console.log("Input tokens:", tokens)
+        console.log("Input cost:", tokens * tokenRates.inputPrice)
       } else if (message.role === "assistant") {
         stats.outputTokens += tokens
+        stats.outputCost += tokens * tokenRates.outputPrice
+        console.log("Output tokens:", tokens)
+        console.log("Output cost:", tokens * tokenRates.outputPrice)
       }
       return stats
     },
-    { inputTokens: systemPromptTokens, outputTokens: 0 },
+    { 
+      inputTokens: systemPromptTokens, 
+      outputTokens: 0,
+      inputCost: systemPromptTokens * tokenRates.inputPrice,
+      outputCost: 0 
+    }
   )
 
   const totalTokens = tokenStats.inputTokens + tokenStats.outputTokens
-  const inputCost = tokenStats.inputTokens * tokenRates.inputPrice
-  const outputCost = tokenStats.outputTokens * tokenRates.outputPrice
-  const totalCost = inputCost + outputCost
+  const totalCost = tokenStats.inputCost + tokenStats.outputCost
 
   // Calculate tokens for current input (for preview)
   const currentInputTokens = input ? countTokens(input) : 0
@@ -344,7 +353,7 @@ export default function Home() {
             }
           : null,
         userInput: lastUserInput || "No input",
-        cost: `$${totalCost.toFixed(6)}`,
+        cost: formatCost(totalCost),
       }
 
       // Call the server action to save
@@ -394,22 +403,22 @@ export default function Home() {
     switch (model) {
       case "gpt-3.5-turbo":
         setTokenRates({
-            inputPrice: 0.0005, // $0.0005 per 1K tokens
-            outputPrice: 0.0015, // $0.0015 per 1K tokens
+            inputPrice: 0.0005 / 1000, // $0.0005 per 1K tokens -> 0.0000005 per token
+            outputPrice: 0.0015 / 1000, // $0.0015 per 1K tokens -> 0.0000015 per token
             model: "gpt-3.5-turbo",
         })
         break
         case "gemini-2.0-flash":
           setTokenRates({
-              inputPrice: 0.0001, // $0.0001 per 1K tokens
-              outputPrice: 0.0004, // $0.0004 per 1K tokens
+              inputPrice: 0.1 / 1_000_000,  // $0.1 per 1M tokens -> 0.0000001 per token
+              outputPrice: 0.4 / 1_000_000, // $0.4 per 1M tokens -> 0.0000004 per token
               model: "gemini-2.0-flash",
           })      
         break
       default:
         setTokenRates({
-          inputPrice: 0.0001, // $0.0001 per 1K tokens
-          outputPrice: 0.0004, // $0.0004 per 1K tokens
+          inputPrice: 0.1 / 1_000_000, // Default to Gemini pricing
+          outputPrice: 0.4 / 1_000_000,
           model: "gemini-2.0-flash",
         })
     }
@@ -417,6 +426,9 @@ export default function Home() {
     // Update the model in the OpenAI hook
     setModel(model)
   }
+
+  // When displaying the cost, format it to 6 decimal places
+  const formatCost = (cost: number) => `$${cost.toFixed(6)}`
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 p-4 transition-colors duration-300">
@@ -561,7 +573,7 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Cost: <span className="text-orange-500 font-medium">${totalCost.toFixed(6)}</span>
+                  Cost: <span className="text-orange-500 font-medium">{formatCost(totalCost)}</span>
                 </div>
               </div>
             </div>

@@ -356,8 +356,11 @@ export default function Home() {
       const result = await saveConversation(messages, fileName, saveOptions)
       
       if (result.success) {
+        // Ensure result.content is a string
+        const content = result.content || ""
+        
         // Create blob and download link from the returned content
-        const blob = new Blob([result.content], { type: 'text/plain' })
+        const blob = new Blob([content], { type: 'text/plain' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         
@@ -399,8 +402,8 @@ export default function Home() {
     switch (model) {
       case "gpt-3.5-turbo":
         setTokenRates({
-            inputPrice: 0.0005 / 1000, // $0.0005 per 1K tokens -> 0.0000005 per token
-            outputPrice: 0.0015 / 1000, // $0.0015 per 1K tokens -> 0.0000015 per token
+            inputPrice: 0.0005 / 1000, // $0.5 per 1M tokens -> 0.0000005 per token
+            outputPrice: 0.0015 / 1000, // $0.15 per 1M tokens -> 0.0000015 per token
             model: "gpt-3.5-turbo",
         })
         break

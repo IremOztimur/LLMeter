@@ -648,7 +648,7 @@ export default function Home() {
                             blockquote: ({ node, ...props }) => (
                               <blockquote className="border-l-4 border-orange-500 pl-4 italic my-4" {...props} />
                             ),
-                            code: ({ node, inline, ...props }) =>
+                            code: ({ node, inline, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) =>
                               inline ? (
                                 <code className="bg-gray-200 dark:bg-gray-700 rounded px-1 py-0.5 text-sm" {...props} />
                               ) : (

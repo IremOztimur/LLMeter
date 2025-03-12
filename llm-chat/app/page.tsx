@@ -359,13 +359,16 @@ export default function Home() {
         // Ensure result.content is a string
         const content = result.content || ""
         
+        // Ensure result.fileName is a string
+        const fileName = result.fileName || "default.txt"
+        
         // Create blob and download link from the returned content
         const blob = new Blob([content], { type: 'text/plain' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         
         link.href = url
-        link.download = result.fileName
+        link.download = fileName
         document.body.appendChild(link)
         link.click()
         
@@ -373,7 +376,7 @@ export default function Home() {
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
         
-        console.log("Conversation saved:", result.fileName)
+        console.log("Conversation saved:", fileName)
       } else {
         throw new Error(result.error)
       }

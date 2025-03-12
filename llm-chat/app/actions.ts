@@ -52,11 +52,6 @@ ${msg.content}
   // Combine metadata and conversation
   const fullContent = metadataSection + conversationSection
 
-  // In a real implementation, you would write to a file
-  // For example:
-  // await fs.writeFile(`${fileName}.txt`, fullContent);
-
-  // For demo purposes, we'll just return the text that would be saved
   return {
     success: true,
     fileName: `${fileName}.txt`,

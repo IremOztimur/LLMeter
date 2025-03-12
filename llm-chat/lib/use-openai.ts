@@ -46,7 +46,7 @@ export function useOpenAI() {
       } else if (storedProvider === "google") {
         setModel("gemini-2.0-flash")
       } else if (storedProvider === "anthropic") {
-        setModel("claude-3-haiku")
+        setModel("claude-3-sonnet")
       }
     }
 
@@ -90,7 +90,7 @@ export function useOpenAI() {
       } else if (currentProvider === "google") {
         setModel("gemini-2.0-flash")
       } else if (currentProvider === "anthropic") {
-        setModel("claude-3-haiku")
+        setModel("claude-3-sonnet")
       }
     }
     

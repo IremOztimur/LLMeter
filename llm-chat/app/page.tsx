@@ -79,13 +79,9 @@ export default function Home() {
       if (message.role === "user") {
         stats.inputTokens += tokens
         stats.inputCost += tokens * tokenRates.inputPrice
-        console.log("Input tokens:", tokens)
-        console.log("Input cost:", tokens * tokenRates.inputPrice)
       } else if (message.role === "assistant") {
         stats.outputTokens += tokens
         stats.outputCost += tokens * tokenRates.outputPrice
-        console.log("Output tokens:", tokens)
-        console.log("Output cost:", tokens * tokenRates.outputPrice)
       }
       return stats
     },

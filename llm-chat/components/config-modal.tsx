@@ -72,7 +72,7 @@ const ConfigModal = ({
       } else if (localProvider === "google" && !finalModel) {
         finalModel = "gemini-2.0-flash"
       } else if (localProvider === "anthropic" && !finalModel) {
-        finalModel = "claude-3-haiku"
+        finalModel = "claude-3-sonnet"
       }
 
       // Save configuration
@@ -101,7 +101,7 @@ const ConfigModal = ({
       setLocalModel("gemini-2.0-flash")
       setLocalBaseUrl("https://generativelanguage.googleapis.com/v1beta")
     } else if (newProvider === "anthropic") {
-      setLocalModel("claude-3-haiku")
+      setLocalModel("claude-3-sonnet")
       setLocalBaseUrl("https://api.anthropic.com")
     }
   }
@@ -213,10 +213,7 @@ const ConfigModal = ({
                 onChange={(e) => setLocalModel(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
-                <option value="gemini-2.0-pro">Gemini 2.0 Pro</option>
                 <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
               </select>
             )}
 
@@ -227,9 +224,7 @@ const ConfigModal = ({
                 onChange={(e) => setLocalModel(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
-                <option value="claude-3-opus">Claude 3 Opus</option>
                 <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-                <option value="claude-3-haiku">Claude 3 Haiku</option>
               </select>
             )}
 

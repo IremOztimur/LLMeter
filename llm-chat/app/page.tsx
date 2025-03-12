@@ -453,7 +453,7 @@ export default function Home() {
         <header className="p-5">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
-              LLM Testing Framework
+              LLMeter
             </h1>
             <div className="flex items-center gap-4">
               <ThemeToggle />

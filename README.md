@@ -2,8 +2,7 @@
 
 LLMeter is a tool designed to help you test and evaluate prompts for various language models. It provides insights into performance and cost, allowing you to optimize your usage effectively.
 
-<img width="1330" alt="Image" src="https://github.com/user-attachments/assets/fc219a79-0065-404b-a535-7489ed9b8ac6" />
-
+<img width="1317" alt="Image" src="https://github.com/user-attachments/assets/5a61acca-85c5-42c8-a5c2-c8b1877b3255" />
 ## Features
 - **Multi-Model Support**: Test prompts across GPT-3.5-turbo, Gemini-2.0-flash, and more
 - **Cost Intelligence**: Real-time token cost estimation with currency conversion

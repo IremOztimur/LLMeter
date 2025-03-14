@@ -302,20 +302,15 @@ export default function Home() {
           throw new Error("Failed to get response from API")
         }
       } else {
-        // Simulate LLM response
-        setTimeout(() => {
-          const responseText = `This is a simulated response to: "${processedInput}".\n\nIn a real implementation, you would connect to an actual LLM API here.\n\nSystem prompt used: "${systemPrompt}"\n\n${activeTemplate ? `Template used: "${activeTemplate.name}"` : "No template used"}`
-          const responseTokens = countTokens(responseText)
+        // Display an error message when the LLM model is not configured
+        const errorMessage: Message = {
+          role: "assistant",
+          content: "Configuration Required: Please enter your API key in the configuration settings to enable the LLM model.",
+          timestamp: new Date().toISOString(),
+          tokens: countTokens("Configuration Required: Please enter your API key in the configuration settings to enable the LLM model."),
+        }
 
-          const assistantMessage: Message = {
-            role: "assistant",
-            content: responseText,
-            timestamp: new Date().toISOString(),
-            tokens: responseTokens,
-          }
-
-          setMessages((prev) => [...prev, assistantMessage])
-        }, 1000)
+        setMessages((prev) => [...prev, errorMessage])
       }
 
       // Reset active template after sending
@@ -326,9 +321,9 @@ export default function Home() {
       // Add error message
       const errorMessage: Message = {
         role: "assistant",
-        content: `Error: Failed to get response from the API. Please check your API key and configuration.\n\nDetails: ${error instanceof Error ? error.message : String(error)}`,
+        content: "Configuration Required: Please enter your API key in the configuration settings to enable the LLM model.",
         timestamp: new Date().toISOString(),
-        tokens: 0,
+        tokens: countTokens("Configuration Required: Please enter your API key in the configuration settings to enable the LLM model."),
       }
 
       setMessages((prev) => [...prev, errorMessage])
